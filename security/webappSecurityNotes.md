@@ -69,21 +69,24 @@ can save the traffic and replay ...
 - TRACE: just echoes back the request
 - PUT and DELETE mostly disabled 
 
-- note that trace, put, delete may not have been enabled for all servers...
+- **nb:** that trace, put, delete may not have been enabled for all servers...
 
 
 ## lab2 HTTP method enumeration
 
 self signed http ssl certificate? 
 
-- purpose: get some interesting insights on what's available
+- **purpose**: get some interesting insights on what end points and info is available on a server
+
+### dirb: a web content scanner
 
 - first thing is to check what services there are: using `dirb <ipaddr>`
-   - has a dict of ipaddr and it will see if that dir exists under that place
-    as there is no definite way to find all directories present on the server if the directory listed is not allowed (which is the common case), dirb is trying different directory names from the dictionary to see if this specific one exist
-    It is dictionary attack to find the present directories.
+   It is a _dictionary attack_ to find the present directories.
+   - has a dict of ipaddrs and it will see if that dir exists for that ipaddr
+    as there is no definite way to find all directories present on the server if the directory listed 
+    is not allowed (which is the common case), dirb is trying different directory names from the dictionary to see if this specific one exist
 
-    . dirb will be able to show us the common dir.
+
     . we might look at uploads dir to see if there's some interesting stuff left available: see "google dorking" 
       where info available in the uploads dir shows up via google searches 
       look at "google site operators" 
@@ -91,23 +94,29 @@ self signed http ssl certificate?
 
 - note that ARP is more at the mac addr level
 
-- use `curl` to run the get request manually  the `-X GET` specifies the Methodology. note that `BURP` is a gui alternative to curl.
-- e.g. using the OPTOINS verb will return the... 
+#### [curl and wget](https://daniel.haxx.se/docs/curl-vs-wget.html) and [another comparison](https://unix.stackexchange.com/questions/47434/what-is-the-difference-between-curl-and-wget)
+
+- use `curl` to run the get request manually  the `-X GET` specifies the method get. note that `BURP` is a gui alternative to curl with added features.
+- e.g. using the `OPTIONS` verb will return the... 
 
 - you may uncover interesting endpoints that allows us to download/upload stuff 
-   a webdav put available then you can compromise the server.
+   if a webdav `PUT` verb is available available then you can compromise the server by putting some files in.
 
-- forms and post methods.. see use the OPTIONS verb to check if posting is allowed
+- forms and post methods.. see use the `OPTIONS` verb to check if posting is allowed
 
+- check the `/uploads` dir. check if `PUT` method is allowed
 
-- check the /uploads dir. check if put method is allowed
+#### [WebDAV](https://en.wikipedia.org/wiki/WebDAV)
 
-   . web DAV for sharing and collabing doc over a web protocol. should be enabled w the proper authentication and authorisation...
+Allows for authoring of remote web content. Basically your crud actions 
+
+extends the standard HTTP verbs and headers and allows some additional request methods.
+
+*  web DAV for sharing and collabing doc over a web protocol. should be enabled w the proper authentication and authorisation...
      using highlevel software might inadvertently open up some of these vulnerabilities, making the server insecure 
 
-     . **core problem: insecure web DAV deployment**
-    
-- if we find that we can make PUT requests
+* **core problem/vulnerability: insecure web DAV deployment**
+  e.g. if we find that we can make `PUT` requests
 - **JUST BECAUSE YOU DON'T HAVE A MEHTOD IN OPTIONS DOESN'T MEAN THAT IT DOESN'T EXISTS** there are other quirks due to certain modules allowing use of some methods...
 
 
@@ -131,8 +140,131 @@ self signed http ssl certificate?
     - the app should be something you created
     - you have explicit clear permission to go ahead and audit
 
-## todo for session 1: 
 
-- learn burp 
--  do lab 1 and 2 
--  look at networking recon 
+
+self signed http ssl certificate?
+
+
+### [DNS and how domain name resolution works works](https://www.youtube.com/watch?v=mpQZVYPuDGU)
+Resolving domain names to IP addrs e.g. yahoo.com to the actual ip addr of that server 
+The DNS server has a db that it cross refers to for the name resolution. 
+If local cache can't help to resolve names then it passes it on to the **Resolver Server** , and if that fails to resolve 
+the names, will be passed to the **Root server**. 
+13 sets of root servers exist, handled by 12 different organisations. 
+
+Root server gives the **TLD server** (stores addr info for the tlds) addr to the Resolver server which finally asks the TLD server for the ipaddr for the 
+address of the tld (e.g. yahoo.com(?)). 
+TLD server will give the addr for that name, which the resolver server uses to look for **Authoritative Name Servers**
+ANS knowns everything about the domain (e.g. ip addr)
+Note that the resolver server will cache this query for future similar queries.
+
+
+
+### [Internet Protocol Suite](https://en.wikipedia.org/wiki/Internet_protocol_suite)
+The Internet protocol suite provides end-to-end data communication specifying how data should be packetized, addressed, transmitted, routed, and received.   
+
+4 layers of abstraction and all the relevant protocols related to these layers.
+
+Intended to be for wired networks. Packet loss is considered to be  the result of network congestion.
+
+
+#### [tcp 3-way handshake](https://madpackets.com/2018/04/10/tcp_handshake/)
+
+TCP favours reliability over timeliness. Trades latency for reliability. IP handles the actual delivery of the data
+while TCP keeps track of segments.
+
+3 way handshake happens before the actual sending of data between client and server. 
+
+first the client send a SYN as in to synchronize
+
+then the server will acknowledge and say SYN-ACK 
+
+then the client will acknowledge that and say ACK 
+
+now they ready to send HTTP requests to and fro
+
+
+**nb:** ssl/tls handshake happens after the tcp handshake. TCP is for the transport layer and TLS handshake is for the application data.
+
+#### [Network Sockets](https://en.wikipedia.org/wiki/Network_socket)
+
+Internal Endpoint for sending/receiving data within a node on a computer network.
+Socket addr is combination of the ip addr and the socket being used.
+
+
+
+
+
+
+tldrs for man pages: https://tldr.sh/
+
+#### [http vs https](https://seopressor.com/blog/http-vs-https/) and [why http is not secure](https://www.cloudflare.com/learning/ssl/why-is-http-not-secure/) and [more on http/3 with QUIC protocol](https://medium.com/devgorilla/what-is-http-3-94335c57823f)
+
+the S is for Secure. done by having an extra SSL/TLS encryption layer. SSL (Secure Sockets Layer) Certificate needs to be there, creating an encrypted connection between
+the server and the browser.
+
+Also secured via a [TLS protocol](https://www.cloudflare.com/learning/ssl/transport-layer-security-tls/) (Transport Layer Security).  Prevents transfer of data being modified, corrupted; provides user authentication(?)
+TLS vs SSL: 
+  * SSL is the predecessor to TLS but the names are pretty interchangeable
+
+TLS handshake happens for the application data. A **cypher suite** is involved. The TLS handshake also handles authentication (where the server proves its identity to the client)
+
+**public keys:** encryption keys with one-way encryption, so anyone can unscramble the data encrypted with a private key to ensure its authenticity...
+Data encrypted with the public key can only be decrypted with the private key, and vice versa.
+
+TLS affects load times a little bit. Countering technologies: TLS False Start (already start transmitting data while the handshake is underway) and TLS Session Resumption (use an abbreviated handshake if connection b/w server and client has happened before)
+
+Thanks to google, switching to HTTPS will improve SEO so this incentivises the switch.
+Need to use HTTPS if you wanna have Accelerated Mobile Pages (AMP) means to be mobile friendly, better to use HTTPS  
+
+
+***SSL Certificates***: certificate is a data file hosted in a website's origin server, contain the website's public key and the identity of the website w other related information.
+what the certificate contains: 
+        The domain name that the certificate was issued for
+        Which person, organization, or device it was issued to
+        Which certificate authority issued it
+        The certificate authority's digital signature
+        Associated subdomains
+        Issue date of the certificate
+        Expiration date of the certificate
+        The public key (the private key is kept secret)
+
+[more on CDN's and Origin Servers here #todo this reading](https://www.cloudflare.com/learning/cdn/glossary/origin-server/)
+
+SSL Certs help prevent [spoofing #todo reading](https://www.cloudflare.com/learning/ddos/glossary/ip-spoofing/)  and such attacks
+nmap tutorial: https://www.edureka.co/blog/nmap-tutorial/
+
+
+SSL certs are given by a Certificate Authority, an outside org. So what's a **self-signed SSL certificate**? can be created by generating a public-private key pairing and having all the info of a cert. Self-signed because it's from a website's own private key. 
+Ppl do this because getting issued an SSL cert requires money (like a license) Cloudfare gives free SSL certs 
+
+
+
+
+
+
+
+
+
+
+
+# Current Reading List: 
+
+webapp vs website: https://www.guru99.com/difference-web-application-website.html
+
+using telnet to send http request?? aren't they diff protocols though  https://www.the-art-of-web.com/system/telnet-http11/
+
+more on IP addrs and subnets, representation in CIDR(classless inter domain routing) https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing
+
+google dorking and db hacking: 
+https://securitytrails.com/blog/google-hacking-techniques
+https://www.exploit-db.com/google-hacking-database
+https://www.shodan.io/
+
+
+burp downloads: https://portswigger.net/burp/releases/professional-community-2020-4
+
+
+metasploit: https://www.youtube.com/watch?v=8lR27r8Y_ik
+
+
