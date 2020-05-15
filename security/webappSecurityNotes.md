@@ -1,4 +1,4 @@
-this markdown file is to be used in conjunction with the slides...[hardlinked!]
+this markdown file is to be used in conjunction with the slides and is supposed to track my self learning...[hardlinked!]
 
 # Day1: Introduction 
 
@@ -29,7 +29,7 @@ HTTP 1.1 vs 1.0:
    * whether you can make multiple request for the same connection or not   
    * for 1.1 the HTTP header requires you to include the hostname
 
-HTTP supports both TCP and UDP, typically TCP is used as the underlying protocol. A 3 way handshake.
+HTTP supports both TCP and UDP, typically TCP is used as the underlying protocol. A 3 way handshake for the TCP connection.
 
 ### netcat / curl / wireshark for http requests
 
@@ -38,6 +38,12 @@ HTTP supports both TCP and UDP, typically TCP is used as the underlying protocol
 - netcat is a replacement for telnet. remember to use `connection close` to close up after you pipeline HTTP requests since the HTTP connection will exist for q long.
   can use netcat to frame your own http requests
 
+```
+  printf 'GET / HTTP/1.1\r\nHost: pentesteracademylab.appspot.com\r\n\r\nPOST / HTTP/1.1\r\nHost: pentesteracademylab.appspot.com\r\n\r\n' | nc pentesteracademylab.appspot com 80 
+
+Please note: The newline in HTTP is CRLF (\r\n) character. The end of a request is identifyed by 2 CRLF characters (\r\n\r\n)
+
+```
 
 
 ## wireshark: network sniffer, to sniff at a per-packet level 
@@ -72,11 +78,72 @@ can save the traffic and replay ...
 - **nb:** that trace, put, delete may not have been enabled for all servers...
 
 
-## lab2 HTTP method enumeration
 
-self signed http ssl certificate? 
+
+
+## lab2 HTTP method enumeration 
+
+mainly to find vulnerabilities in legacy servers or in misconfiged situations
+
+misconfig e.g. in Apache .htaccess files
+
+e.g. the admin has limited access to a particular method for a usergroup but has inadvertently allowed non-auth requirement for other http methods.
+
+### my steps overall: 
+
+0. find host ip and target ip using `ifconfig` or `ip addr`
+
+1. Scanning things: 
+   1. did a nmap scan via `nmap –sC –sV <target-ip>  -oA`, to check for relevant HTTP methods
+      
+      also, look for availble nmap scripts at `cd /usr/share/nmap/scripts` (or just check official documentation) and 
+      run nmap with `nmap --script=http-methods.nse 192.X.Y.3 -n -p 80` where n skips DNS resolution and p specifies the port so that nmap doesn't take too long
+
+      **nb:** if you run the retest argument like so: `nmap --script=http-methods.nse --script-args http-methods.retest=1 <target ip>` then if there are verbs like delete and all, it will actually send that request and DELETE things...
+
+   2. _alternatively_, http method enumeration using metasploit: 
+      1. `msfconsole` to open up the metasploit framework's console
+      2. `use auxialiary/scanner/http/options` to switch to that module 
+      3. `show options` to show the options present in the module
+      4. `set RHOSTS <target ip>` to set the target ip addr
+      5. `run`  
+
+       ```bash
+       [+] 192.50.24.3 allows GET,HEAD,OPTIONS methods
+       [*] Scanned 1 of 1 hosts (100% complete)
+       [*] Auxiliary module execution completed
+       ```
+
+   3. method tampering [not that useful here i think]: 
+      1. for nmap: `nmap --script=http-method-tamper.nse <target>`
+      2. for metasploit: 
+         1. `use auxiliary/scanner/http/verb_auth_bypass`
+         2. `show options` and set things accordingly...
+
+2. ***Identifying endpoints:*** Inspecting the target website. Look around, identify endpoints e.g. login pages, other pages... 
+   1. for forms see what endpoint the post request corresponds to. 
+   2. use dirb to enumerate end points
+
+    endpoints found: 
+    * `/index.php` the homepage  
+    * `/login.php` the login form... 
+    * `/post.php` the view for the post
+    *  `/uploads/`
+
+
+    known login credentials, login with `​ curl -X POST 192.45.178.3/login.php -d "name=john&password=password" -v`
+    notice it gives a 302 redirect
+
+
+3. gaining RCE by following these steps https://www.exploit-db.com/papers/12885
 
 - **purpose**: get some interesting insights on what end points and info is available on a server
+
+### [using nmap](https://www.edureka.co/blog/nmap-tutorial/) and [the official nmap guide](https://nmap.org/book/man.html)
+
+- so many flags! e.g. `nmap –sC –sV <target-ip>  -oA results.txt`
+
+- can search for nmap scripts e.g. `cd /usr/share/nmap/scripts/`
 
 ### dirb: a web content scanner
 
@@ -268,3 +335,17 @@ burp downloads: https://portswigger.net/burp/releases/professional-community-202
 metasploit: https://www.youtube.com/watch?v=8lR27r8Y_ik
 
 
+
+
+
+# Day 2: database
+
+
+- nmap's mongodb-brute script uses a default dictionary (it's a hybrid of )
+
+
+Reading list: 
+- more on webshells: https://www.acunetix.com/blog/articles/introduction-web-shells-part-1/
+- hashcat, john the ripper,mdk <---some tools: 
+- https://dev.mysql.com/doc/mysql-security-excerpt/8.0/en/connection-control-installation.html  <-- setting limits on number of queries in a db
+- 

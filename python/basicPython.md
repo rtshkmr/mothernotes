@@ -1,5 +1,6 @@
 to document the gaining of some basic python skills, resources: [Automate the Boring Stuff](http://automatetheboringstuff.com/) and the Pentester academy's instructions.
 
+
 # [Scripting w Python](http://automatetheboringstuff.com/appendixb/)
 
 Shebangs followed by filepath to the python interpreter, OS dependent syntax: 
@@ -260,3 +261,170 @@ for folderName, subfolders, filenames in os.walk("<root folder>"):
 
 add control flow to them to control what you wanna do. The os.walk function will therefore be v useful. 
 rmb to do dry runs!
+
+
+## Python Debugging: 
+
+- Raising exceptions via the `raise Exception(<string message>)` keyword.
+- using traceback to trace the stack frames... just check documentation for this. Direct to a textfile to keep error logs!
+
+You can raise your own exceptions: raise Exception(‘This is the error message.')
+You can also use assertions: assert condition, ‘Error message'
+Assertions are for detecting programmer errors that are not meant to be recovered from. User errors should raise exceptions.
+
+### logging in python
+
+basically an easy way to create markers in your code to help you trace the flow of logic...
+There are 5 log levels, read up when needed.
+
+The logging module lets you display logging messages.
+Log messages create a "breadcrumb trail" of what your program is doing.
+After calling `logging.basicConfig()` to set up logging, call `logging.debug(‘This is the message')` to create a log message.
+When done, you can disable the log messages with `logging.disable(logging.CRITICAL)` at the top of the file
+Don't use `print()` for log messages: It's hard to remove them all when you're done debugging.
+The five log levels are: DEBUG, INFO, WARNING, ERROR, and CRITICAL.
+You can also log to a file instead of the screen with the filename keyword argument in the logging.basicConfig() function.
+
+
+
+## [Python Webscraping](https://automatetheboringstuff.com/chapter11/)
+
+haha this is so hardcody hahaha
+
+### `webbrowser` module
+
+demo-ing the webbrowser module: input is a call to the script that takes in a location of some sort and then opens up googles maps to that address...
+
+```python
+import webbrowser, sys , pyperclip
+
+sys.argv # for the cmd args, passed in as a list of strings...
+
+#============    obtain addresss =========================================
+# now we wanna make it into a single query and join the elements in that list: 
+if len(sys.argv) > 1 : # e.g. argv: ['mapit', '870', 'valencia', 'street']
+    address = ' '.join(sys.argv[1:])
+else: # take from clipboard using pyperclip
+    address = pyperclip.paste()
+
+
+# observe url inputs and just figure out how to make that query..
+webbrowser.open('https://www.google.com/maps/place' + address);
+```
+make this executable and add to paths and now can just run this easily.
+
+
+### python requests module (3rd party)
+
+won't be good for doing auth and other gui-related actions...
+
+[documentation here](http://requests.readthedocs.org/)
+
+The Requests module is a third-party module for downloading web pages and files.
+`requests.get()` returns a **Response object**.
+The `raise_for_status()` Response method will raise an exception if the download failed.
+You can save a downloaded file to your hard drive with calls to the `iter_content()` method.
+
+to save the response object into a file, note that the response object is binary data and so, you pass in args like so: 
+`playFile = open('myFile.txt', 'wb')` where the `wb` stands for "write binary"
+
+```python
+res = requests.get('https://automatetheboringstuff.com/files/rj.txt')
+playFile = open('RomeoAndJuliet.txt', 'wb')
+for chunk in res.iter_content(100000) #number reflects bytes
+    playFile.write(chunk)
+playFile.close() #rmb to close the file
+```
+
+### HTML Scraping via the `BeautifulSoup` module `bs4`
+
+Web pages are plaintext files formatted as HTML.
+HTML can be parsed with the `BeautifulSoup` module.
+BeautifulSoup is imported with the name `bs4`.
+Pass the string with the HTML to the `bs4.BeautfiulSoup()` function to get a Soup object. good to pass in a 2nd arg for the markup parser e.g. `'html.parser'`
+The Soup object has a `select()` method that can be passed a string of the CSS selector for an HTML tag.
+You can get a CSS selector string from the browser's developer tools by right-clicking the element and selecting Copy CSS Path.
+The `select()` method will return a list of matching Element objects.
+
+```python
+import bs4, requests
+
+URL = 'https://www.amazon.com/s?bbn=493964&rh=n%3A172282%2Cn%3A%21493964%2Cn%3A502394%2Cp_n_shipping_option-bin%3A3242350011&dc&fst=as%3Aoff&pf_rd_i=16225009011&pf_rd_m=ATVPDKIKX0DER&pf_rd_p=82d03e2f-30e3-48bf-a811-d3d2a6628949&pf_rd_r=9XH4WCPW90VPCBR9GBM4&pf_rd_s=merchandised-search-4&pf_rd_t=101&qid=1486423355&qid=1486423355&rnid=493964&rnid=493964%2Fs%2Fref%3Dsr_nr_n_1%3Ffst%3Das%3Aoff&ref=s9_acss_bw_cts_AEElectr_T2_w'
+chosenCSSPath = 'html.a-js.a-audio.a-video.a-canvas.a-svg.a-drag-drop.a-geolocation.a-history.a-webworker.a-autofocus.a-input-placeholder.a-textarea-placeholder.a-local-storage.a-gradients.a-transform3d.a-touch-scrolling.a-text-shadow.a-text-stroke.a-box-shadow.a-border-radius.a-border-image.a-opacity.a-transform.a-transition.a-ember body.a-m-us.a-aui_72554-c.a-aui_dropdown_187959-c.a-aui_pci_risk_banner_210084-c.a-aui_perf_130093-c.a-aui_preload_261698-c.a-aui_tnr_v2_180836-c.a-aui_ux_145937-c.a-meter-animate div#a-page div#search.s-desktop-container div.s-desktop-width-max.s-desktop-content.sg-row div.sg-col-20-of-24.sg-col-28-of-32.sg-col-16-of-20.sg-col.sg-col-32-of-36.sg-col-8-of-12.sg-col-12-of-16.sg-col-24-of-28 div.sg-col-inner span.rush-component.s-latency-cf-section div.s-result-list.s-search-results.sg-row div.sg-col-20-of-24.s-result-item.s-asin.sg-col-0-of-12.sg-col-28-of-32.sg-col-16-of-20.sg-col.sg-col-32-of-36.sg-col-12-of-16.sg-col-24-of-28 div.sg-col-inner span.celwidget.slot=SEARCH_RESULTS.template=SEARCH_RESULTS.widgetId=search-results div.s-include-content-margin.s-border-bottom.s-latency-cf-section div.a-section.a-spacing-medium div.sg-row div.sg-col-4-of-12.sg-col-8-of-16.sg-col-16-of-24.sg-col-12-of-20.sg-col-24-of-32.sg-col.sg-col-28-of-36.sg-col-20-of-28 div.sg-col-inner div.sg-row div.sg-col-4-of-24.sg-col-4-of-12.sg-col-4-of-36.sg-col-4-of-28.sg-col-4-of-16.sg-col.sg-col-4-of-20.sg-col-4-of-32 div.sg-col-inner div.a-section.a-spacing-none.a-spacing-top-small div.a-row.a-size-base.a-color-base div.a-row a.a-size-base.a-link-normal.a-text-normal span.a-price span'
+def getAmazonPrice(productURL):
+    res = request.get(productURL) #dl that page
+    res.raise_for_status() # check for success in downloading
+
+    soup = bs4.BeautifulSoup(res.text, 'html.parser')
+    elems = soup.select(chosenCSSPath)
+    elems[0].text.strip()
+
+price = getAmazonPrice(URL);
+print("the price is : " + price)
+```
+
+### [selenium module's](https://selenium-python.readthedocs.org) webdriver to control browser behaviour (3rd party)
+
+To import selenium, you need to run: "`from selenium import webdriver`" (and not "import selenium").
+To open the browser, run: `browser = webdriver.Firefox()`
+To send the browser to a URL, run: `browser.get(‘https://inventwithpython.com')`
+The `browser.find_elements_by_css_selector()` method will return a list of WebElement objects: `elems = browser.find_elements_by_css_selector(‘img')`
+**nb:** all the functions have a singular and a plural form.
+
+WebElement objects have a "text" variable that contains the element's HTML in a string: elems[0].text
+The `click()` method will click on an element in the browser.
+The `send_keys(<string inputs>)` method will type into a specific element in the browser.
+The `submit()` method will simulate clicking on the Submit button for a form.
+The browser can also be controlled with these methods: `back()`, `forward()`, `refresh()`, `quit()`.
+
+## Common Document Handling
+
+### Excel via `openpyxl`
+
+**reading**
+The OpenPyXL third-party module handles Excel spreadsheets (`.xlsx` files).
+`openpyxl.load_workbook(filename)` returns a Workbook object.
+`get_sheet_names()` and `get_sheet_by_name()` help get Worksheet objects.
+The square brackets in sheet`[‘A1']` get Cell objects.
+Cell objects have a "value" member variable with the content of that cell.
+The `cell()` (two input args: e.g. row=1, column=2) method also returns a Cell object from a sheet.
+
+
+**modifying:**
+You can view and modify a sheet's name with its "title" member variable.
+Changing a cell's value is done using the square brackets, just like changing a value in a list or dictionary.
+Changes you make to the workbook object can be saved with the save() method.
+
+You can view and modify a sheet's name with its "title" member variable.
+Changing a cell's value is done using the square brackets (and assigning the value you want), just like changing a value in a list or dictionary.
+Changes you make to the workbook object can be saved with the `save()` method. **NB:** to prevent buggy overwriting, save as a new filename!
+
+
+### PDFs via `PyPDF2`
+
+note that pdfs are binary files and it makes it complicated to handle via code
+The PyPDF2 module can read and write PDFs **for editing done at a page level!**
+Opening a PDF is done by calling `open()` and passing the file object to `PdfFileReader()` 
+```python 
+    pdfFile = open('myFile.pdf', 'rb');
+    reader = PyPDF2.PdfFileReader(pdfFile)
+```
+A Page object can be obtained from the PDF object with the `getPage()` method.
+The text from a Page object is obtained with the `extractText()` method, which can be imperfect.
+New PDFs can be made from `PdfFileWriter()`.
+New pages can be appended to a writer object with the `addPage()` method.
+Call the `write()` method to save its changes.
+
+
+### .docx files 
+
+The `Python-Docx` third-party module can read and write .docx Word files.
+Open a Word file with `docx.Document()`
+Access one of the Paragraph objects from the "paragraphs" member variable, which is a list of Paragraph objects.
+Paragraph objects have a "text" member variable containing the text as a string value.
+Paragraphs are composed of "runs".  The "runs" member variable of a Paragraph object contains a list of Run objects.
+Run objects also have a "text" member variable.
+Run objects have a "bold", "italic", and "underline" member variables which can be set to True or False.
+Paragraph and run objects have a "style" member variable that can be set to one of Word's built-in styles.
+Word files can be created by calling add_paragraph() and add_run() to append text content.
+
