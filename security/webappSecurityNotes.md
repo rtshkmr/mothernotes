@@ -350,18 +350,11 @@ Aim: two vulnerabilities to the Rails framework are known, we have to exploit th
 1. exploits can be composited together!
 
 
-
-
-
-
-
 webapp vs website: https://www.guru99.com/difference-web-application-website.html
 
 using telnet to send http request?? aren't they diff protocols though  https://www.the-art-of-web.com/system/telnet-http11/
 
 more on IP addrs and subnets, representation in CIDR(classless inter domain routing) https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing
-
-
 
 
 - nmap's mongodb-brute script uses a default dictionary (it's a hybrid of )
@@ -669,6 +662,158 @@ there's a shadow format:
   common types of encryption: `$1$` – MD5  `$2a$` – Blowfish  `$2y$` – Eksblowfish  `$5$` – SHA-256   `$6$` – SHA-512
 
 
+
+# day 3: directory enumeration and the various tools for it
+
+**why enumerate?**
+
+* go broad first then slowly focus on the finer things. don't just brute-force your way through looking for a vulnerability
+* see what a webserver actually serves and if there's some data leaked in some dir
+* don't see dir enumeration as some low-hanging fruit, it can be really useful
+* usually config problems happen because dev and deployment end up being done by diff ppl/teams
+
+* **NB**: wordlists (e.g. for password attacks) are geographically unique too, that's why it's a good idea to try out different wordlists when doing dictionary attacks 
+
+* benefit of searching for specific file types, amplifying the search by specific file extensions: 
+    * searching for .txt files: when backups created as zip files... and have user credentials... encrypted zip files w weak passwords are very easy to break...
+    * look at active scripts like php
+        examples of useful active php scripts if available:
+        - `installation.php` install scripts there [mihgt be possbile to reset the entire application]
+        - `register.php` 
+        - `php.info`: info scripts will have config related info, might be useful
+        - `phpinfo.php` will literally give all sorts of config info and service availability!
+
+
+* note that if server detects your use of wordlists, (e.g. too many threads created, too little time difference b/w requests) then connection speed might be throttled.
+
+* note that spidering is usually illegal, we should check on our own jurisdiction and laws
+
+
+* ***HTTP Status codes can be really useful as well***: see HTTP code as well: if `500` then can see a huge stack trace if `debug=true` still there errors are not always bad
+
+- can search for [blank-file extensions](https://office-watch.com/2014/opening-a-mystery-file-with-no-extension/). These are just files with MIME type fields that might still be able to tell us more about the contents within them. Look for a [Content type header](https://www.w3.org/Protocols/rfc1341/4_Content-Type.html) and also, this is what [MIME type means](https://stackoverflow.com/questions/3828352/what-is-a-mime-type)
+
+* there's no diff in enumerating http and https websites. it will work the same.
+
+* cookies and authentication: 
+ Generally, you will encounter applications which does not require an authenticated session for directory/file enumeration. However, sometimes the web application is designed in a way that you can only access particular directory when you are an authenticated user. Please note, HTTP is a stateless protocol, the most common approach towards maintaining session is with a cookie. 
+
+So for e.g, in case the application only allows the authenticated user to view the directory/files. What you will have to do in this case is 
+
+1. Login as a user. 
+2. Retrieve the cookie. 
+3. Pass the cookie to dirb. 
+
+This way dirb will act as an authenticated user trying to access various directory/files.
+
+
+## more on crawling
+
+* crawling behgins from webpages and not wordlists. this means that in case a directory is not referenced in any of the webpages, it will never get into the sitemap. (meanwhile dir enum happens via a wordlist)
+
+* 
+
+* Sitemap display all of the webpages and directory which have been discovered till now. Please note, you might not be accessing the webpages directly and many webpages would have been called with AJAX. Sometimes as a developer you might pay more attention to the main pages and make sure that there are no vulnerability on the main page, but you might notice that the webpages which are called with AJAX might have some vulnerability in it. The whole idea of having sitemap is that all the webpages are know to you and you can test all the webpages out and not just the webpages which can be accessed directly.
+
+### week 3 lab: dirb directory enum
+
+* In case of directory enumeration, the folder/files are discovered on dictionary attack (along with files which are discovered because directory listing is enabled on the server). In case of crawling, The links on the webpages are crawled, for e.g if Page a has link to page b, page b will be added to sitemap. In case of directory bursting, crawling is not done. i.e if the name of page b is not in the wordlist it will never get added to the sitemap.
+    *
+
+* wordlists can be changed, usual wordlist is at `/usr/share/wordlists/dirb/common.txt`
+
+
+* can look for specific file-types using the `-X` flag! e.g. searching just for textfiles or config files or active scripts (php scripts maybe). we can also make a file that lists out certain file extensions and pass `-x <filename>` to that so dirb amplifies search for all those file extensions
+   
+* recursively searching within dir: 
+    - stop it using `-r` prevents recursive searching
+
+* you'd want to filter out certain response cods (e.g. 403 unauthorised) so use the `-N <status code>` flag
+
+
+
+
+0. basic recon info: 
+    * target ip: 192.238.2.3
+    ```
+        PORT     STATE SERVICE VERSION
+        80/tcp   open  http    Apache httpd 2.4.7 ((Ubuntu))
+        3306/tcp open  mysql   MySQL 5.5.47-0ubuntu0.14.04.1
+    ```
+
+    - basically this lab is just to try out the various flags for the `dirb` tool
+
+### week3 lab: [dirbuster directory enum](https://www.hackingarticles.in/comprehensive-guide-on-dirbuster-tool/)
+
+- dirbuster can control the thread count, that's a benefit, but beware being network-throttled 
+
+
+- Dirbuster can follow redirects!
+
+- by controlling the number of requests per second, thread count and the request timeout duration, we can avoid server detection
+
+
+### week 3 lab: [burpsuite directory enum]()
+
+- note that the free version has some limitations:
+
+    * need to config a [payload position](https://portswigger.net/burp/documentation/desktop/tools/intruder/positions) : 
+    ```http            
+    GET /§name§ HTTP/1.0
+    Cookie: c=cval
+    Content-Length: 17
+
+    \r\n
+    ```
+    here, the `§name§` is a placeholder for the various words that we gonna try with
+    * the payload you use can't add an entire list file, must add strings word by word.
+    * it's awfully slow to do a full enumeration
+
+* burpsuite is horrible when runing an entire dictionary attack but allows us to tweak payload positions and all so might be really useful when searching for specific directories and resources
+
+
+### week 3 lab: [gobuster](https://github.com/OJ/gobuster)
+
+[see more on the motivation behind creating gobuster and the maker's intended use case](https://tools.kali.org/web-applications/gobuster), basically he wanted it to be super fast and lightweight. 
+
+- gobuster is very fast and efficient, but you need to explicitly provide the target and the wordlists and other arguments. it doesn't automatically use default parameters for some of the arguments.
+    * take note that enumerating multiple arguments to a particular flag, you have to use commas to separate them e.g. 
+    `$ gobuster dir -u http://192.156.207.3/data -w /usr/share/wordlists/dirb/common.txt -b 403,404 -x .php,.xml,.txt -r`
+- the exclusion of status codes is possible via the `-b` flag
+
+### week 3 lab: [opendoor]()
+
+- the benefit of using opendoor is the generation of reports in the various formats. e.g. using html, we can view the results easily.
+
+- question: it seems that the colour coded outputs of the dictionary searching doesn't really get printed out, could just be a bug but the reports generated seems to be done properly though, just that the cli output isn't that verbose
+
+* Opendoor requires host as a parameter and not a URL, therefore it will only consider the host part and it will ignore the path. 
+    * so have to do: `opendoor --host http://192.156.207.3/ -s directories -w /usr/share/wordlists/dirb/common.txt -e php,txt.xml --prefix data/"` instead of putting the host as `http://192.156.207.3/data`
+
+
+### week3 lab: [zaproxy](https://www.zaproxy.org/)
+
+zaproxy seems to have a really useful gui with a hud that overlays and feeds info. really nice to use!
+
+#### directory enum with zaproxy
+
+* By default, ZAP only has one wordlist for fuzzing. The wordlists are present in the directory `/root/.ZAP/fuzzers/dirbuster/`. that's why it's a good idea to copy over the dirb's wordlists to this directory: `cp /usr/share/wordlists/dirb/common.txt ~/.ZAP/fuzzers/dirbuster/`
+
+* ZAP passively scans all of the requests proxied through it or generated by components like the traditional and AJAX spiders. Passive scanning just involves looking at the raw requests and responses - nothing is changed so it is considered safe to use. 
+
+* Active scanning attempts to find other vulnerabilities by using known attacks against the selected targets. Active scanning is a real attack on those targets and can put the targets at risk, so do not use active scanning against targets you do not have permission to test. 
+
+As long as you are accessing web pages through ZAP, you are performing passive crawling. But as soon as you start the spider, it turns into active crawling.
+
+#### active crawling with zaproxy
+
+# todos and toreads
+
+* [CRLF characters](https://tools.ietf.org/html/rfc2616)
+* [metasploit tutorial](https://www.youtube.com/watch?v=8lR27r8Y_ik)
+* [case study of equifax leak: some apache struct caveat](https://www.brighttalk.com/webcast/13983/280311/behind-the-equifax-breach-a-deep-dive-into-apache-struts-cve-2017-5638)
+* [honeypots](https://www.forcepoint.com/cyber-edu/deception-technology)
+
 # Useful References
 * [tldrs for man pages](https://tldr.sh/)
 * [pentesteracademy relevant webapp pentesting labs](https://www.attackdefense.com/listing?labtype=pa-web-app-pentesting&subtype=pa-web-app-pentesting-video-labs)
@@ -682,9 +827,3 @@ there's a shadow format:
 * [metasploit tutorial](https://www.youtube.com/watch?v=8lR27r8Y_ik)
 * 
 
-
-# todos and toreads
-
-* also,read up on shadow files and how passwords are stored in the unix filesystems.
-* [metasploit tutorial](https://www.youtube.com/watch?v=8lR27r8Y_ik)
-* 
