@@ -1,4 +1,61 @@
+*disclaimer: if anyone else is **actually** reading this. take note that i have absolutely no clue on the specifics behind the legality of some of these attempts. just don't do stuff on websites that aren't yours or you don't have permission to pentest.*
+
 this markdown file is to be used in conjunction with the slides and is supposed to track my self learning...[hardlinked!]
+
+- [Day1: Introduction](#day1-introduction)
+  - [HTTP as a stateless protocol](#http-as-a-stateless-protocol)
+    - [netcat / curl / wireshark for http requests](#netcat--curl--wireshark-for-http-requests)
+  - [wireshark: network sniffer, to sniff at a per-packet level](#wireshark-network-sniffer-to-sniff-at-a-per-packet-level)
+    - [more on cookies](#more-on-cookies)
+  - [http status codes](#http-status-codes)
+  - [http request methods](#http-request-methods)
+  - [lab2 HTTP method enumeration](#lab2-http-method-enumeration)
+    - [my steps overall:](#my-steps-overall)
+    - [using nmap and [the official nmap guide](https://nmap.org/book/man.html)](#using-nmap-and-the-official-nmap-guide)
+    - [dirb: a web content scanner](#dirb-a-web-content-scanner)
+      - [curl and wget and [another comparison](https://unix.stackexchange.com/questions/47434/what-is-the-difference-between-curl-and-wget)](#curl-and-wget-and-another-comparison)
+      - [WebDAV](#webdav)
+    - [foxyproxy proxy plugin for browser](#foxyproxy-proxy-plugin-for-browser)
+    - [burp](#burp)
+    - [DNS and how domain name resolution works works](#dns-and-how-domain-name-resolution-works-works)
+    - [Internet Protocol Suite](#internet-protocol-suite)
+      - [tcp 3-way handshake](#tcp-3-way-handshake)
+      - [Network Sockets](#network-sockets)
+      - [http vs https and [why http is not secure](https://www.cloudflare.com/learning/ssl/why-is-http-not-secure/) and [more on http/3 with QUIC protocol](https://medium.com/devgorilla/what-is-http-3-94335c57823f)](#http-vs-https-and-why-http-is-not-secure-and-more-on-http3-with-quic-protocol)
+  - [week 1 Lab: laravel unserialize](#week-1-lab-laravel-unserialize)
+  - [week 1 Lab: rails doubletap RCE](#week-1-lab-rails-doubletap-rce)
+- [Day 2: databases in webapps](#day-2-databases-in-webapps)
+  - [week 2 lab: SQL basics](#week-2-lab-sql-basics)
+  - [week 2 lab: NoSQL basics:](#week-2-lab-nosql-basics)
+  - [week 2 lab: mysql recon basics](#week-2-lab-mysql-recon-basics)
+  - [week2: mongodb recon basics](#week2-mongodb-recon-basics)
+  - [wee2: from web to shell on the server](#wee2-from-web-to-shell-on-the-server)
+- [Day 3: directory enumeration and the various tools for it](#day-3-directory-enumeration-and-the-various-tools-for-it)
+  - [more on crawling](#more-on-crawling)
+    - [week 3 lab: dirb directory enum](#week-3-lab-dirb-directory-enum)
+  - [week3 lab: dirbuster directory enum](#week3-lab-dirbuster-directory-enum)
+  - [week 3 lab: burpsuite directory enum](#week-3-lab-burpsuite-directory-enum)
+  - [week 3 lab: gobuster](#week-3-lab-gobuster)
+    - [week 3 lab: opendoor](#week-3-lab-opendoor)
+    - [week3 lab: zaproxy](#week3-lab-zaproxy)
+      - [directory enum with zaproxy](#directory-enum-with-zaproxy)
+      - [active crawling with zaproxy](#active-crawling-with-zaproxy)
+  - [webapp scanning](#webapp-scanning)
+    - [week3: webapp scanning with nikto](#week3-webapp-scanning-with-nikto)
+    - [week 3: webapp scanning using zaproxy](#week-3-webapp-scanning-using-zaproxy)
+  - [xss attacking and sql injections](#xss-attacking-and-sql-injections)
+    - [week 3: using xsser for xss attacks](#week-3-using-xsser-for-xss-attacks)
+    - [week 3: using sqlmap](#week-3-using-sqlmap)
+- [day 4: authentication, cracking passwords and injections (command and sql injections)](#day-4-authentication-cracking-passwords-and-injections-command-and-sql-injections)
+  - [Authentication in HTTP](#authentication-in-http)
+    - [Week 3 Labs: Hydra and HTTP auth](#week-3-labs-hydra-and-http-auth)
+    - [Week 3: using hydra to attack form login](#week-3-using-hydra-to-attack-form-login)
+    - [week 3: using zapproxy to attack form logins](#week-3-using-zapproxy-to-attack-form-logins)
+    - [week 4: burpsuite login form attack](#week-4-burpsuite-login-form-attack)
+  - [OWASP (open web application security project) top 10](#owasp-open-web-application-security-project-top-10)
+    - [XSS](#xss)
+- [todos and toreads](#todos-and-toreads)
+- [Useful References](#useful-references)
 
 # Day1: Introduction 
 
@@ -61,6 +118,16 @@ consider browser devtools having bugs, that's why using something dedicated like
 the hex values in your packets: the ascii equiv when it's gibberrish, you can look at the hexvalues and see if there's something to reverse engineer for that binary protocols
 can save the traffic and replay ... 
 
+
+**can use tcpxtract** to extract stuff from the traffic being sniffed. Note that tcpxtract isn't on kali by default. tcpxtract seems to be the most stable...
+
+### more on cookies
+
+* filter by `http.set_cookie` to look at the transfer of cookies. browser cache decides what to do based on expiry date of the cookie (?). note that the http header is `set_cookie`. simply put: the cookie is sent back everytime the client henceforth makes requests to the server. a particular http packer might have multiple cookies (they are essentially name-value pairs). 
+
+* the expires attribute is very crucial
+  * if a set_cookie doesn't have an expires field, it's a sessions cookie, i.e. browser will delete the cookie once the browser is closed. 
+  * only if the header has an expires field, then will the cookie persist after the browser has been closed
 
 ## http status codes
 
@@ -663,7 +730,7 @@ there's a shadow format:
 
 
 
-# day 3: directory enumeration and the various tools for it
+# Day 3: directory enumeration and the various tools for it
 
 **why enumerate?**
 
@@ -743,7 +810,7 @@ This way dirb will act as an authenticated user trying to access various directo
 
     - basically this lab is just to try out the various flags for the `dirb` tool
 
-### week3 lab: [dirbuster directory enum](https://www.hackingarticles.in/comprehensive-guide-on-dirbuster-tool/)
+## week3 lab: [dirbuster directory enum](https://www.hackingarticles.in/comprehensive-guide-on-dirbuster-tool/)
 
 - dirbuster can control the thread count, that's a benefit, but beware being network-throttled 
 
@@ -753,7 +820,7 @@ This way dirb will act as an authenticated user trying to access various directo
 - by controlling the number of requests per second, thread count and the request timeout duration, we can avoid server detection
 
 
-### week 3 lab: [burpsuite directory enum]()
+## week 3 lab: [burpsuite directory enum]()
 
 - note that the free version has some limitations:
 
@@ -761,9 +828,7 @@ This way dirb will act as an authenticated user trying to access various directo
     ```http            
     GET /§name§ HTTP/1.0
     Cookie: c=cval
-    Content-Length: 17
-
-    \r\n
+    Content-Length: 17 \r\n
     ```
     here, the `§name§` is a placeholder for the various words that we gonna try with
     * the payload you use can't add an entire list file, must add strings word by word.
@@ -772,7 +837,7 @@ This way dirb will act as an authenticated user trying to access various directo
 * burpsuite is horrible when runing an entire dictionary attack but allows us to tweak payload positions and all so might be really useful when searching for specific directories and resources
 
 
-### week 3 lab: [gobuster](https://github.com/OJ/gobuster)
+## week 3 lab: [gobuster](https://github.com/OJ/gobuster)
 
 [see more on the motivation behind creating gobuster and the maker's intended use case](https://tools.kali.org/web-applications/gobuster), basically he wanted it to be super fast and lightweight. 
 
@@ -807,12 +872,160 @@ As long as you are accessing web pages through ZAP, you are performing passive c
 
 #### active crawling with zaproxy
 
+* note that for active crawling, link discovery is done through html
+
+
+## webapp scanning
+
+the idea is to collate vulnerabilities on a target website.
+
+### week3: webapp scanning with [nikto](https://cirt.net/Nikto2)
+
+- nikto gives like an audit report of sorts, tells us what is interesting to possibly look into
+- this lab exploited [Local File Inclusion Vulnerability](https://www.netsparker.com/blog/web-security/local-file-inclusion-vulnerability/). Taxonomy for such a vulnerability: 
+  - Broken Access Control --> Insecure Direct Object References -->  Local File Inclusion
+  * Basically it deals with how files are accessed by the webapp, if not configured properly, can glean loads of other files in the server by passing in the correct url params. 
+
+- here's a [nikto cheatsheet](https://redteamtutorials.com/2018/10/24/nikto-cheatsheet/)
+
+
+### week 3: webapp scanning using zaproxy
+
+- passive and active crawling and classifying found vulnerabilities according to risk level.
+- this lab teaches how to config zaproxy to use an authenticated session:
+  - crawl to the login request part, then rightclick and select the inclusion of a context choose default context. add relevant info
+  - establish a user, set the lock user context feature, now we can spider and active scan in the context of that known user account
+
+- zaproxy's hud is so convenient, it shows what possbile vulnerabilites have been detected, including what payloads to use to test those. some basic bugs can be explored on [***bWAPP***](http://www.itsecgames.com/)
+  
+## xss attacking and sql injections
+
+### week 3: using [xsser](https://github.com/epsylon/xsser) for xss attacks 
+
+- for an input field, intercept the http packet using burp
+
+### week 3: using sqlmap
+
+# day 4: authentication, cracking passwords and injections (command and sql injections)
+
+* encoding was never intended to secure things, it's mainly to prevent interference in characters...
+
+
+## Authentication in HTTP
+
+**these refer to the Schemas at the HTTP layer. Form authentication is at the application layer instead.** 
+you can have a form that does both app layer and then a httplayer auth as a budget-2factor auth of sorts but q useless.
+
+there are 3 main ways we can implement authentication: (indicated by the `WWW-Authenticate` HTTP header)
+1. [HTTP Basic Authentication](https://docs.oracle.com/cd/E19226-01/820-7627/bncbo/index.html)
+    * server requests for account credentials when client attempts to access a protected resource, and when client provides it, server does a lookup to see if the credentials are valid. 
+        * usually the credentials are input in a dialogue box...
+    * the code is HTTP code written w the `<login-config>` tags in the **deployment descriptor** (seems like an )
+    * insecure, sent with base64 encoding (no hashing done) via text can be intercepted if someone is sniffing the network (e.g. free public wifi) but it's probably okay if you're doing it over SSL or VPN (via secure transport mechanisms)
+    * also is secure enough if used over TLS/SSL 
+        * note that in general, using basic auth over HTTPS does roughly the same stuff as using Digest Authentication, but then again the basic auth implementation is vulnerable to phishing attacks ( this use of HTTPS relies upon the end user to accurately validate that they are accessing the correct URL each time to prevent sending their password to an untrusted server, which results in phishing attacks. Users often fail to do this, which is why phishing has become the most common form of security breach) 
+2. [Digest Authentication](https://en.wikipedia.org/wiki/Digest_access_authentication)
+    * take note on the concept of [security realms](https://docs.oracle.com/cd/E13222_01/wls/docs90/secintro/realm_chap.html)
+    * the account credentials are hashed first before being sent over the network
+    * MD5 cryto hashing is used and there's a [nonce value](https://en.wikipedia.org/wiki/Cryptographic_nonce) used for this too. nonce values have timestamps and that's another way that replay attacks are mitigated.
+        * md5 hash is a 16-byte value and is intended to be a [one-way ](https://en.wikipedia.org/wiki/One-way_functionauthentication) but can bruteforce to find out the input for a given output if the input is weak
+        * note that [MD5 hashing](https://en.wikipedia.org/wiki/MD5) isn't secure as suffers from collision attacks but somehow still used and can somewhat safely be used to generate checksums to check for fidelity as a result of unintentional abberations (like not a proper attack w intention)
+    * uses the HTTP protocol
+    * vulnerable to [MITM]https://en.wikipedia.org/wiki/Man-in-the-middle_attack) attacks where the Middle man tells the client that it's a basick auth, then obtains the account credentials from that 
+
+
+    **RFC 2069**: 
+      * server response has a nonce and an [opaque](https://medium.com/@billatnapier/opaque-one-of-the-great-advancements-in-cybersecurity-aace51a76560) (doesn't play any role for rfc2069)
+      * nonce and oqaque have to be the same, browser will generate a response (for the server's request for auth) and sends it to the server
+        * the creation for the response is done via md5 hash where both the account credentials and the request header are hashed
+            * h1 = hash(Username:Realm:Password)  <--- `:` represents concatenation
+            * h2 = hash(method:URI)
+            * response = hash(hash1:nonce:hash2) <--- hashing the concatenation of h1,h2
+    * **RFC 2671**: 
+      * adds _client based nonces_, `cnonce` that mitigate chosen plain-text attacks
+      * there an additionally field of QOP (quality of protection)
+      * the hash1 and 2 are calculated in the exact same way, only the response's calculation is changed to : 
+        `response = md5(hash1:nonce:noncecount:client-nonce:QOP:hash2)`
+
+3. [Token Based Authentication](https://auth0.com/learn/token-based-authentication-made-easy/) that use [access tokens](https://en.wikipedia.org/wiki/Access_token)
+    * The general concept behind a token-based authentication system is simple. Allow users to enter their username and password in order to obtain a token which allows them to fetch a specific resource - without using their username and password. Once their to ken has been obtained, the user can offer the token - which offers access to a specific resource for a time period - to the remote site. Using some form of authentication: a header, GET or POST request, or a cookie of some kind, the site can then determin e what level of access the request in question should be afforded. [useful description](https://www.w3.org/2001/sw/Europe/events/foaf-galway/papers/fp/token_based_authentication/)
+
+### Week 3 Labs: [Hydra](https://www.mankier.com/1/hydra) and HTTP auth
+
+0. do the usal recon for the target, looking for ip, what services there exist and on which port...
+1. identify the type of auth used for the protected resources 
+  * do a curl request to that end point and look at the header for the response.
+    ```http
+    HTTP/1.1 401 Unauthorized
+    Date: Thu, 28 May 2020 11:18:43 GMT
+    Server: Apache/2.4.7 (Ubuntu)
+    WWW-Authenticate: Basic realm="private"
+    Content-Type: text/html; charset=iso-8859-1
+    ```
+
+    ```bash
+    root@attackdefense:~# curl -I 192.11.202.3/digest/
+    HTTP/1.1 401 Unauthorized
+    Date: Thu, 28 May 2020 11:22:38 GMT
+    Server: Apache/2.4.7 (Ubuntu)
+    WWW-Authenticate: Digest realm="Private", nonce="x8rJi7OmBQA=54ad25cea76a4b01f383aca826d28538fc132495", algorithm=MD5, qop="auth"
+    Content-Type: text/html; charset=iso-8859-1
+    ```
+
+2. use hydra to crack basic http auth: 
+    * `hydra -l admin -P /root/Desktop/wordlists/100-common-passwords.txt $target http-get /basic/`
+
+  * establish a login via curl: 
+    * `curl -u admin:cookie1 <target path>`
+
+3. use hydra to crack digest http auth: 
+    * the same steps as in step 2
+
+### Week 3: using [hydra to attack form login](https://linuxhint.com/crack-web-based-login-page-with-hydra-in-kali-linux/)
+
+0. do the usual recon, go to the login form, inspect element and see what end point the form is sending data to for the auth, what input fields are in the form..
+1. prepare the username lists and password lists in separate files which we pass to hydra later. we do this cuz we know exactly what unames to use...
+2.  call hydra, using `$ hydra -L usernames -P passwords 192.208.137.3 http-post-form "/login.php:login=^USER^&password=^`
+    * note that the string param to the hydra command is like `<login path> : <login parameters> : <what string you don't want to see in the response i.e. the failed criteria>`
+    * the invalid credentials part is dependent on how the applcation was made. specific to the design by the dev. that's why don't have a flash message for forms that says something like `"user doesn't exist"`. basically don't have a simple system where it's easy for an attacker to enumerate thru and test easily
+    * note that organisations (e.g. schools) might have usernames leaked, making it easy to crack because now we just have to do dict attack for the password
+    * **usability and security can pretty much be orthogonal**
+
+### week 3: using zapproxy to attack form logins
+
+- pretty much as expected, we passive crawl to get the request for that form, then use the **fuzzer** tool along with some payload to dictionary attack that, not sure if can actually pass in wordlist files though.
+
+### week 4: burpsuite login form attack
+
+- burp has various attack methods, look into it 
+  * e.g. cluster bomb:  tries out 10 pwds for every uname and then changes the pwd-uname..
+
+
+## OWASP (open web application security project) top 10
+
+
+### XSS
+
+Here's how zaproxy describes xss: 
+> Cross-site Scripting (XSS) is an attack technique that involves echoing attacker-supplied code into a user's browser instance. A browser instance can be a standard web browser client, or a browser object embedded in a software product such as the browser within WinAmp, an RSS reader, or an email client. The code itself is usually written in HTML/JavaScript, but may also extend to VBScript, ActiveX, Java, Flash, or any other browser-supported technology.
+> When an attacker gets a user's browser to execute his/her code, the code will run within the security context (or zone) of the hosting web site. With this level of privilege, the code has the ability to read, modify and transmit any sensitive data accessible by the browser. A Cross-site Scripted user could have his/her account hijacked (cookie theft), their browser redirected to another location, or possibly shown fraudulent content delivered by the web site they are visiting. Cross-site Scripting attacks essentially compromise the trust relationship between a user and the web site. Applications utilizing browser object instances which load content from the file system may execute code under the local machine zone allowing for system compromise.
+> There are three types of Cross-site Scripting attacks: non-persistent, persistent and DOM-based.
+>Non-persistent attacks and DOM-based attacks require a user to either visit a specially crafted link laced with malicious code, or visit a malicious web page containing a web form, which when posted to the vulnerable site, will mount the attack. Using a malicious form will oftentimes take place when the vulnerable resource only accepts HTTP POST requests. In such a case, the form can be submitted automatically, without the victim's knowledge (e.g. by using JavaScript). Upon clicking on the malicious link or submitting the malicious form, the XSS payload will get echoed back and will get interpreted by the user's browser and execute. Another technique to send almost arbitrary requests (GET and POST) is by using an embedded client, such as Adobe Flash.
+> Persistent attacks occur when the malicious code is submitted to a web site where it's stored for a period of time. Examples of an attacker's favorite targets often include message board posts, web mail messages, and web chat software. The unsuspecting user is not required to interact with any additional site/link (e.g. an attacker site or a malicious link sent via email), just simply view the web page containing the code.
+
+
+
 # todos and toreads
 
 * [CRLF characters](https://tools.ietf.org/html/rfc2616)
 * [metasploit tutorial](https://www.youtube.com/watch?v=8lR27r8Y_ik)
 * [case study of equifax leak: some apache struct caveat](https://www.brighttalk.com/webcast/13983/280311/behind-the-equifax-breach-a-deep-dive-into-apache-struts-cve-2017-5638)
 * [honeypots](https://www.forcepoint.com/cyber-edu/deception-technology)
+* [understanding rainbow tables for password cracking](https://www.geeksforgeeks.org/understanding-rainbow-table-attack/)
+* [wikipage on jwts](https://en.wikipedia.org/wiki/JSON_Web_Token) and reading up on [public key authentication](https://en.wikipedia.org/wiki/Public-key_cryptography)
+* [opaque actually makes things opaque](https://medium.com/@billatnapier/opaque-one-of-the-great-advancements-in-cybersecurity-aace51a76560)
+* look into learning GOlang for writing own scripts and crawlers
+* port(external pov) vs socket(as file descriptors?)
 
 # Useful References
 * [tldrs for man pages](https://tldr.sh/)
@@ -821,9 +1034,8 @@ As long as you are accessing web pages through ZAP, you are performing passive c
 * [shodan search engine](https://www.shodan.io/)
 * [burpsuite downloads](https://portswigger.net/burp/releases/professional-community-2020-4)
 * hashcat, john the ripper,mdk <---some tools: 
-* - hydra :
-  https://tools.kali.org/password-attacks/hydra
+* - [hydra](https://tools.kali.org/password-attacks/hydra)
   https://sectools.org/tag/pass-audit/
 * [metasploit tutorial](https://www.youtube.com/watch?v=8lR27r8Y_ik)
-* 
+* [red team tutorials, has nice cheatsheets and other tutorials on loads of pentesting tools](https://redteamtutorials.com/)
 
