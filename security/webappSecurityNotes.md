@@ -1912,12 +1912,38 @@ the payload example is found in the repo. e.g. `() { :; }; echo; echo; /bin/bash
 ### week 8 lab: Log Analysis for GoAccess
 [cid=142](https://youtu.be/dw7GiUNOgY0)
 
-SKIPPED
+[GoAccess](https://goaccess.io/) is a logging utility that runs on *nix systems. 
+
+1. there's an entire chart for static resource queries, that's how we know what resources are asked for, we can sort via the various columns, including bandwidth
+2. identifying a ddos attack: 
+   1. we see that on 4 Apr, there was a huge spike in number of hits relative to the increase in number of unique visitors
+3. next, to see the percetage of use of HTTP 1.0 as compared to other protocols, look at the requested files by url and we can sort by protocol 
+4. By looking at the 404s, we can tell what the attacker was attempting to look for. 
+   1. e.g. we see that the requests for logs for `wp-login.php` gave 404s, the attacker was trying to see if wp was the CMS being used by the webapp
+5. We can access geolocation data and know how much of the traffic originated from a particular country
+6. We can also determine which OS was used by most of the requesters, e.g. for mobile, on Android OS, most were using marshmellow...
+7. By looking at the browsers (and under crawlers), we can know which browser's bots had crawled the site
+8. We can look at referrer sites too, here github is the largest external referrer
+9. Geolocation data includes grouping by continent as well as by countries
+  
+
 
 ### week 8 lab: Log Analysis for Apache
-[cid=1181]()
+[cid=1181]
 
-OOh there are flags for this.
+This server has the [Kibana dashboard](https://www.elastic.co/kibana) for elastisearch. The rough idea is to figure out how to use kibana's query language and create a visualisation for it
+
+Flags: 
+1. SQLmap was used to do a SQLi attack, we can found out which was the vulnerable webpage. To help us, Kibana has its own query language and we filter it by useragent since sqlmap is the user agent: `agent *sqlmap*`. Next, we use the visualisation tool, create a pie chart, with this filter: ` request:"index.php?page=*"`. This shows the `index.php` is the one that had SQLi as there were 42,422 requests made to `index.php` 
+2. finding out the ips of the computers that were doing directory enum requires looking into the 404s logs, we create a visualisation, settle the correct 
+3. path traversal attacks/LFI attacks/URLencoding attacks, where the target was `/etc/shadow`, we can apply the filter `*etc**shadow*` and get 2 hits for that target
+4. filter: ` request.keyword:"/btslab/tmp/" and response:200`gives the ip addr of the attacker that reached that resource
+5. to determine number of union based SQLi attacks, filter: `*union* and *select*`
+6. to check if any requests had a specific response code, filter: `response:500`
+7. a dir traversal attack was used to fetch the passwd file. Firstly we filter by pdf: `request:*pdf*`, giving us the url used, then we can look for other such directory traversal attempts by filter: `request:"/btslab/vulnerability/dor/download.php?file="`. This shows us the response length in bytes when its a failed response, 240 bytes. Now we modify the fitler to: ` request:"/btslab/vulnerability/dor/download.php?file=" and request:*etc* andrequest:*passwd*` to filter out the passwd file
+
+
+[SKIPPED THE REST OF THE FLAGS ON ANALYSING CSRF ATTACKS. ANOTHER TIME MAN]
 
 
 ### week8 lab: Privilege Escalation Web to Root
