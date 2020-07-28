@@ -2,7 +2,7 @@ Sun Jul 26 11:07:42 +08 2020
 
 [c reference documentation](https://en.cppreference.com/w/c)
 
-Learning C for CS2100, shall learn from [GeeksForGeeks](https://www.geeksforgeeks.org/c-programming-language/#Basics) and there's also a [C syntax wiki](https://en.wikipedia.org/wiki/C_syntax)
+Learning C for CS2100, shall learn from [GeeksForGeeks](https://www.geeksforgeeks.org/c-programming-language/#Basics) and there's also a [C syntax wiki](https://en.wikipedia.org/wiki/C_syntax). These notes are form the POV of someone having learnt Java and JavaScript prior to learning C.
 
 Interestingly, [codepad](http://codepad.org/) allows us to run programs via a browser.
 
@@ -10,11 +10,25 @@ Interestingly, [codepad](http://codepad.org/) allows us to run programs via a br
 [also wtf is this C shennanigans](https://stackoverflow.com/questions/367633/what-are-all-the-common-undefined-behaviours-that-a-c-programmer-should-know-a)
 
 
+***`TABLE OF CONTENTS`!***
 
+-------
 - [1. Background, History and some Basics](#1-background-history-and-some-basics)
 - [2. Variable Decl, Defn and Scope](#2-variable-decl-defn-and-scope)
+  - [basic keywords example](#basic-keywords-example)
+  - [Scoping in C](#scoping-in-c)
+  - [Internal and External Linkage in C](#internal-and-external-linkage-in-c)
+    - [Linkers and Name Resolution: how to resolve global symbols?](#linkers-and-name-resolution-how-to-resolve-global-symbols)
+    - [Redeclaring Global Var in C](#redeclaring-global-var-in-c)
+  - [Making Sense of Complicated Declarations](#making-sense-of-complicated-declarations)
+- [3. Pointers](#3-pointers)
+  - [Pointer Exp and Arithmetic](#pointer-exp-and-arithmetic)
+  - [Double Pointers](#double-pointers)
+  - [Function Pointers](#function-pointers)
+- [reading list](#reading-list)
 - [questions to clarify](#questions-to-clarify)
 
+-------
 
 
 # 1. Background, History and some Basics
@@ -106,10 +120,483 @@ Interestingly, [codepad](http://codepad.org/) allows us to run programs via a br
 
 # 2. Variable Decl, Defn and Scope
 
+just to focus on some interesting/new keywords:
 
+**declaration** involves setting aside some memory space and **definition** involves assigning variables to that addr. 
+
+Variables may be **`static`** i.e. retains value b/w multiple function calls is known as static variable.
+
+**Automatic Variables**: all vars declared inside the block, has associated `auto` keyword. basically your locally defined var, just explicitly declared. 
+
+**External Variables**: for sharing b/w multiple C files ("package level"), `extern` keyword is used to share b/w multiple C files. basically a global var
+
+**Constants**: must be initialised during their declaration! `const` is also used in [ref to a pointer](https://www.geeksforgeeks.org/const-qualifier-in-c/)
+
+**Void**: useful in the [context of pointers](https://www.geeksforgeeks.org/void-pointer-c-cpp/), kiv for another time
+
+
+
+## basic keywords example 
+
+  ```c
+
+  #include <stdio.h> 
+    
+  // declaring and initializing an extern variable 
+  extern int x = 9;  
+    
+  // declaring and initializing a global variable 
+  // simply int z; would have initialized z with 
+  // the default value of a global variable which is 0 
+  int z=10; 
+    
+  // using typedef to give a short name to long long int  
+  // very convenient to use now due to the short name 
+  typedef long long int LL;  
+    
+  // function which prints square of a no. and which has void as its 
+  // return data type 
+  void calSquare(int arg)  
+  { 
+      printf("The square of %d is %d\n",arg,arg*arg); 
+  } 
+    
+  // Here void means function main takes no parameters 
+  int main(void)  
+  { 
+      // declaring a constant variable, its value cannot be modified 
+      const int a = 32;  
+    
+      // declaring a  char variable 
+      char b = 'G'; 
+    
+      // telling the compiler that the variable z is an extern variable  
+      // and has been defined elsewhere (above the main function) 
+      extern int z; 
+    
+      LL c = 1000000; 
+    
+      printf("Hello World!\n"); 
+    
+      // printing the above variables 
+      printf("This is the value of the constant variable 'a': %d\n",a); 
+      printf("'b' is a char variable. Its value is %c\n",b); 
+      printf("'c' is a long long int variable. Its value is %lld\n",c); 
+      printf("These are the values of the extern variables 'x' and 'z'"
+      " respectively: %d and %d\n",x,z); 
+    
+      // value of extern variable x modified 
+      x=2;  
+    
+      // value of extern variable z modified 
+      z=5;  
+    
+      // printing the modified values of extern variables 'x' and 'z' 
+      printf("These are the modified values of the extern variables"
+      " 'x' and 'z' respectively: %d and %d\n",x,z); 
+    
+      // using a static variable 
+      printf("The value of static variable 'y' is NOT initialized to 5 after the "
+              "first iteration! See for yourself :)\n"); 
+    
+      while (x > 0) 
+      { 
+          static int y = 5; 
+          y++; 
+          // printing value at each iteration 
+          printf("The value of y is %d\n",y); 
+          x--; 
+      } 
+    
+      // print square of 5 
+      calSquare(5);  
+    
+      printf("Bye! See you soon. :)\n"); 
+    
+      return 0; 
+  } 
+
+  ```
+
+## Scoping in C
+
+**mind = blown.**
+
+**C variables Statically(Lexically) Scoped**
+
+i.e. binding of a variable can be determined by program text and is independent of the run-time function call stack. [see example here](https://www.geeksforgeeks.org/g-fact-16/)
+
+[wiki page on scoping](https://en.wikipedia.org/wiki/Scope_(computer_science)). Dynamic scoping relies on execution context. Some Scripting languages, template languages... usedynamic scoping. 
+
+
+## [Internal and External Linkage in C](https://www.geeksforgeeks.org/internal-linkage-external-linkage-c/)
+
+**Scope vs Linkage:**
+Linkage thus allows you to couple names together on a per file basis, scope determines visibility of those names.
+Scope is a property handled by compiler while linkage is a property handled by linker.
+Until compilation, a var can be decscribed by it's scope, upon compiling, the linking process starts and linkage comes into play. The compilation process includes a *linking stage* actually. 
+
+Linkage is a property that describes how variables should be linked by the linker. Should a variable be available for another file to use? Should a variable be used only in the file declared? Both are decided by linkage.
+
+**Internal Linkage:**
+  *  An identifier implementing internal linkage is not accessible outside the translation unit it is declared in.
+     *  Any identifier within the unit can access an identifier having internal linkage. It is implemented by the keyword `static`. An internally linked identifier is stored in initialized or uninitialized segment of RAM.
+  *  Another property of internal linkage is that it is only implemented when the variable has global scope, and all constants are by default internally linked.
+  *  an internally linked var is passed by copy! that's why can reuse names for helper functions that are translation-unit specific
+  *  
+
+### Linkers and Name Resolution: how to resolve global symbols?
+
+***caution: don't take linkers lightly, as the bugs due to misunderstanding of how they work are freaking difficult to find***
+
+There's a notion of **strong and weak symbols** (something that the compiler determines at compile time, before passing it on to the assembler and the assembler encodes into the symbol table of the relocatable object file), based on which the following rules are adhered to when dealing with multiple defined symbols: 
+
+> Rule 1: Multiple strong symbols (with same variable name) are not allowed.  
+> Rule 2: Given a strong symbol and multiple weak symbols, choose the strong symbol.  
+> Rule 3: Given multiple weak symbols, choose any of the weak symbols.
+
+* Notice that the linker normally gives no indication that it has detected multiple definitions of x.
+
+  ```c
+  /* foo3.c */
+  #include <stdio.h> 
+  void f(void); 
+  int x = 15213; 
+  int main() 
+  { 
+    f(); 
+    printf("x = %d\n", x); 
+    return 0; 
+  } 
+    
+  /* bar3.c */
+  int x; 
+  void f() 
+  { 
+    x = 15212; 
+  } 
+
+  // At run time, function f() changes the value of x from 15213 to 15212
+  ```
+
+* *The application of rules 2 and 3 can introduce some insidious run-time bugs that are incomprehensible to the unwary programmer, especially if the duplicate symbol definitions have different types.*
+
+  Example : “x” is defined as an int in one module and a double in another.
+
+  ```c
+  /*a.c*/
+  #include <stdio.h> 
+  void b(void);  
+    
+  int x = 2016; 
+  int y = 2017; 
+  int main() 
+  { 
+      b(); 
+      printf("x = 0x%x y = 0x%x \n", x, y); 
+      return 0; 
+  } 
+  /*b.c*/
+  double x; 
+    
+  void b() 
+  { 
+      x = -0.0; 
+  } 
+  // execution steps / o/p: 
+  // $ gcc a.c b.c -o geeksforgeeks
+  // $ ./geeksforgeeks
+  // x = 0x0 y = 0x80000000
+  ```
+  This is a subtle and nasty bug, especially because it occurs silently, with no warning from the compilation system, and because it typically manifests itself much later in the execution of the program, far away from where the error occurred. In a large system with hundreds of modules, a bug of this kind is extremely hard to fix, especially because many programmers are not aware of how linkers work. When in doubt, invoke the linker with a flag such as the gcc -fno-common flag, which triggers an error if it encounters multiple defined global symbols.
+
+
+### Redeclaring Global Var in C
+
+C allows a global var to be declared again when first declaration doesn't initialize the var.
+
+  ```c
+
+  // Program 1 FAILS COMPILATION
+  int main() 
+  { 
+    int x; 
+    int x = 5; 
+    printf("%d", x); 
+    return 0;  
+  } 
+
+
+
+  // Program 2  PASSES
+  int x; 
+  int x = 5; 
+    
+  int main() 
+  { 
+    printf("%d", x); 
+    return 0;  
+  } 
+
+  ```
+
+## Making Sense of Complicated Declarations
+
+The general idea is to read things in postfix notation and then try to make sense of it. [some examples here](https://www.geeksforgeeks.org/complicated-declarations-in-c/). smol example: 
+
+* `int (*fp) ();`: 
+  - convert above expression to postfix format. For the above example, there is no innermost parenthesis, that’s why, we will print declaration name i.e. `fp`. Next step is, go to right side of expression, but there is nothing on right side of `fp` to parse, that’s why go to left side. On left side we found `*`, now print `*` and come out of parenthesis. We will get postfix expression as below.
+  - postfix expression:  `fp * () int` --> read postfix expression from left to right. e.g. fp is pointer to function returning int
+
+* `void (*f[10]) (int, int) `:
+  - postfix: `f[10] * (int, int) void` --> f is an array of 10 pointer to function(which takes 2 arguments of type int) returning void
+
+* `int *(*(*arr[5])()) ()`: 
+    * postfix: `arr[5] * () * () * int` --> arr is an array of 5 pointers to functions returning pointer to function returning pointer to integer 
+
+
+# 3. Pointers
+
+Pointer Related Symbols:
+  * `&`: access mem adress of a variable
+  * `*`: 
+    * declaration of pointer var
+    * **Pointer dereferencing**: access the value stored in the address we use the unary operator (*) that returns the value of the variable located at the address specified by its operand
+
+
+syntax example: 
+  ```c
+
+  // C program to demonstrate use of * for pointers in C 
+  #include <stdio.h> 
+    
+  int main() 
+  { 
+      // A normal integer variable 
+      int Var = 10; 
+    
+      // A pointer variable that holds address of var. 
+      int *ptr = &Var; 
+    
+      // This line prints value at address stored in ptr. 
+      // Value stored is value of variable "var" 
+      printf("Value of Var = %d\n", *ptr); 
+    
+      // The output of this line may be different in different 
+      // runs even on same machine. 
+      printf("Address of Var = %p\n", ptr); 
+    
+      // We can also use ptr as lvalue (Left hand 
+      // side of assignment) 
+      *ptr = 20; // Value at address is now 20 
+    
+      // This prints 20 
+      printf("After doing *ptr = 20, *ptr is %d\n", *ptr); 
+    
+      return 0; 
+  } 
+```
+
+## Pointer Exp and Arithmetic
+
+Since Pointers hold addresses, we can do some arithmetic w them: 
+
+* Incrementing
+* Decrementing
+* Integer addition to the pointer
+* Integer substraction on the pointer
+  * also: Subtracting two addresses lets you compute the offset between these two addresses.
+
+  ```c
+
+  // C++ program to illustrate Pointer Arithmetic 
+  // in C/C++ 
+  #include <bits/stdc++.h> 
+    
+  // Driver program 
+  int main() 
+  { 
+      // Declare an array 
+      int v[3] = {10, 100, 200}; 
+    
+      // Declare pointer variable 
+      int *ptr; 
+    
+      // Assign the address of v[0] to ptr 
+      ptr = v; 
+    
+      for (int i = 0; i < 3; i++) 
+      { 
+          printf("Value of *ptr = %d\n", *ptr); 
+          printf("Value of ptr = %p\n\n", ptr); 
+    
+          // Increment pointer ptr by 1 
+          ptr++; 
+      } 
+  } 
+
+  // o/p:
+  // Value of *ptr = 10
+  // Value of ptr = 0x7ffcae30c710
+
+  // Value of *ptr = 100
+  // Value of ptr = 0x7ffcae30c714
+
+  // Value of *ptr = 200
+  // Value of ptr = 0x7ffcae30c718
+
+  ```
+
+
+**Array names act as pointer constants**, value of the pointer is the addr of the first element. So, if array's name is `val`, then `val` and `&val[0]` are interchangable.
+
+> multidimensional arrays... 
+> consider `int nums[2][3]  =  { {16, 18, 20}, {25, 26, 27} };`
+
+> Pointer Notation | Array Notation | Value
+> --- | --- | --- 
+> *(*nums) |  nums[0][0] | 	16
+> *(*nums + 1) | 	nums[0][1] | 	18
+> *(*nums + 2) | 	nums[0][2] | 	20
+> *(*(nums + 1)) | 	nums[1][0] | 	25
+> *(*(nums + 1) + 1) | 	nums[1][1] | 	26
+> *(*(nums + 1) + 2) | 	nums[1][2] | 	27
+
+
+***nb: In general, `nums[i][j]` is equivalent to `*(*(nums+i)+j)`***
+
+
+## Double Pointers
+
+just use this example:
+  ```c
+
+  #include <stdio.h> 
+    
+  // C program to demonstrate pointer to pointer 
+  int main() 
+  { 
+      int var = 789; 
+    
+      // pointer for var 
+      int *ptr2; 
+    
+      // double pointer for ptr2 
+      int **ptr1; 
+    
+      // storing address of var in ptr2 
+      ptr2 = &var; 
+        
+      // Storing address of ptr2 in ptr1 
+      ptr1 = &ptr2; 
+        
+      // Displaying value of var using 
+      // both single and double pointers 
+      printf("Value of var = %d\n", var ); 
+      printf("Value of var using single pointer = %d\n", *ptr2 ); 
+      printf("Value of var using double pointer = %d\n", **ptr1); 
+      
+    return 0; 
+  }  
+
+  // output:
+  // Value of var = 789
+  // Value of var using single pointer = 789
+  // Value of var using double pointer = 789
+  ```
+## [Function Pointers](https://www.geeksforgeeks.org/function-pointer-in-c/)
+
+mind = blown.
+
+Well, just pointers to functions. There are some cool caveats to function pointers.
+
+1. function pointers point to code, not data, i.e. function pointers store the start of executable code
+2. we don't de-allocate mem using function pointers
+3. func ptr's name can be used to get the fn's addr, so can omit the `&` operator to access the address. 
+4. can have an array of function pointers
+5. can use function pointer in place of switch case:
+   
+  ```c
+  #include <stdio.h> 
+  void add(int a, int b) 
+  { 
+    printf("Addition is %d\n", a+b); 
+  } 
+  void subtract(int a, int b) 
+  { 
+    printf("Subtraction is %d\n", a-b); 
+  } 
+  void multiply(int a, int b) 
+  { 
+    printf("Multiplication is %d\n", a*b); 
+  } 
+
+  int main() 
+  { 
+    // fun_ptr_arr is an array of function pointers 
+    void (*fun_ptr_arr[])(int, int) = {add, subtract, multiply}; 
+    unsigned int ch, a = 15, b = 10; 
+
+    printf("Enter Choice: 0 for add, 1 for subtract and 2 "
+        "for multiply\n"); 
+    scanf("%d", &ch); 
+
+    if (ch > 2) return 0; 
+
+    (*fun_ptr_arr[ch])(a, b); 
+
+    return 0; 
+  } 
+
+  // o/p / interaction: 
+  // Enter Choice: 0 for add, 1 for subtract and 2 for multiply
+  // 2
+  // Multiplication is 150 
+  ```
+6. fn ptrs can be passed as args and returned as output as well! v useful in reducing code redundancy
+   
+  ```c
+  // An example for qsort and comparator 
+  #include <stdio.h> 
+  #include <stdlib.h> 
+
+  // A sample comparator function that is used 
+  // for sorting an integer array in ascending order. 
+  // To sort any array for any other data type and/or 
+  // criteria, all we need to do is write more compare 
+  // functions. And we can use the same qsort() 
+  int compare (const void * a, const void * b) 
+  { 
+  return ( *(int*)a - *(int*)b ); 
+  } 
+
+  int main () 
+  { 
+  int arr[] = {10, 5, 15, 12, 90, 80}; 
+  int n = sizeof(arr)/sizeof(arr[0]), i; 
+
+  qsort (arr, n, sizeof(int), compare); 
+
+  for (i=0; i<n; i++) 
+    printf ("%d ", arr[i]); 
+  return 0; 
+  } 
+
+```
+
+* [this is a really weird example of dereferencing and referencing](https://www.geeksforgeeks.org/dereference-reference-dereference-reference/) basically `*` and `&` cancel each other out. 
+
+
+# reading list
+https://www.geeksforgeeks.org/g-fact-19-redeclaration-of-global-variable-in-c/
+https://www.geeksforgeeks.org/internal-linkage-external-linkage-c/
+https://www.geeksforgeeks.org/different-ways-declare-variable-constant-c-c/
+https://www.geeksforgeeks.org/variable-name-not-start-numbers-c/
+https://www.geeksforgeeks.org/g-fact-19-redeclaration-of-global-variable-in-c/
+https://www.geeksforgeeks.org/initialization-global-static-variables-c/
 
 # questions to clarify
 
 1. macros in C are not exactly the same as generics in java? need to read up on generics in C
-2. 
+2. i don't get the syntax for the compare function as in function pointers point 6.
 3. 
