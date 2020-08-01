@@ -21,10 +21,15 @@ Interestingly, [codepad](http://codepad.org/) allows us to run programs via a br
     - [Linkers and Name Resolution: how to resolve global symbols?](#linkers-and-name-resolution-how-to-resolve-global-symbols)
     - [Redeclaring Global Var in C](#redeclaring-global-var-in-c)
   - [Making Sense of Complicated Declarations](#making-sense-of-complicated-declarations)
-- [3. Pointers](#3-pointers)
+- [3. Functions](#3-functions)
+- [4. Pointers](#4-pointers)
   - [Pointer Exp and Arithmetic](#pointer-exp-and-arithmetic)
   - [Double Pointers](#double-pointers)
   - [Function Pointers](#function-pointers)
+    - [Function pointer declarations](#function-pointer-declarations)
+    - [Pointers and Arrays](#pointers-and-arrays)
+      - [Pointers vs Arrays](#pointers-vs-arrays)
+  - [`restrict` keyword](#restrict-keyword)
 - [reading list](#reading-list)
 - [questions to clarify](#questions-to-clarify)
 
@@ -355,7 +360,11 @@ The general idea is to read things in postfix notation and then try to make sens
     * postfix: `arr[5] * () * () * int` --> arr is an array of 5 pointers to functions returning pointer to function returning pointer to integer 
 
 
-# 3. Pointers
+# 3. Functions
+
+
+
+# 4. Pointers
 
 Pointer Related Symbols:
   * `&`: access mem adress of a variable
@@ -397,6 +406,98 @@ syntax example:
   } 
 ```
 
+[Difference between const char *p, char * const p and const char * const p](https://www.geeksforgeeks.org/difference-const-char-p-char-const-p-const-char-const-p/): 
+
+* `const`: can be used as a qualifier on **any** variable. const keyword applies to whatever is immediately to its left. If there is nothing to its left, it applies to whatever is immediately to its right
+  * `const char *ptr`:  it's a pointer called `ptr`, to a const char. Can't change the value pointed to by `ptr` but can change the pointer itself:
+    ```c
+    int main() 
+    { 
+        char a ='A', b ='B'; 
+        const char *ptr = &a; 
+          
+        //*ptr = b; illegal statement (assignment of read-only location *ptr) 
+          
+        // ptr can be changed 
+        printf( "value pointed to by ptr: %c\n", *ptr); 
+        ptr = &b; 
+        printf( "value pointed to by ptr: %c\n", *ptr); 
+    } 
+    ```
+    **nb:**  no difference between const char *p and char const *p as both are pointer to a const char and position of ‘*'(asterik) is also same. 
+  * `char *const ptr`: is a constant pointer to a non-constant character. So, can't change the ptr, but can change the value that's pointed to by the pointer
+    ```c
+    int main() 
+    { 
+        char a ='A', b ='B'; 
+        char *const ptr = &a; 
+        printf( "Value pointed to by ptr: %c\n", *ptr); 
+        printf( "Address ptr is pointing to: %d\n\n", ptr); 
+      
+        //ptr = &b; illegal statement (assignment of read-only variable ptr) 
+      
+        // changing the value at the address ptr is pointing to 
+        *ptr = b;  
+        printf( "Value pointed to by ptr: %c\n", *ptr); 
+        printf( "Address ptr is pointing to: %d\n", ptr); 
+    } 
+    // output: 
+    // Value pointed to by ptr: A
+    // Address ptr is pointing to: -1443150762
+
+    // Value pointed to by ptr: B
+    // Address ptr is pointing to: -1443150762
+    ```
+  * `const char * const ptr`: constant pointer to a constant character. Can't change the ptr nor the value of the character that it's pointing at
+
+
+
+Some more type of pointers: 
+
+* **Dangling Pointers**: pointer points to a mem location that's been deleted/freed
+  * created when mem is de-allocated (i.e freed) 
+  * when a function uses a local variable, a pointer pointing to that local variable will become a dangling pointer when that local variable is not static
+* [**Void pointer**](https://www.geeksforgeeks.org/void-pointer-c-cpp/): pointer pointing to some mem location that doesn't have a specific type. Any pointer is convertible to a void pointer and hence can point to any value
+  * void pointer can't be dereferenced but **can be typecasted into any type**:
+      ```c
+      // this won't compile, error: Compiler Error: 'void*' is not a pointer-to-object type 
+      #include<stdio.h> 
+      int main() 
+      { 
+        int a = 10; 
+        void *ptr = &a; 
+        printf("%d", *ptr); 
+        return 0; 
+      } 
+
+      // this will compile, o/p is 10
+      #include<stdio.h> 
+      int main() 
+      { 
+        int a = 10; 
+        void *ptr = &a; 
+        printf("%d", *(int *)ptr); 
+        return 0; 
+      } 
+
+      ```
+    * Void pointers are use **to implement generic functions in C**, [see the comparator for qsort function](https://www.geeksforgeeks.org/comparator-function-of-qsort-in-c/) for an example of such generic functions
+      * [generic linked lists in C](https://www.geeksforgeeks.org/generic-linked-list-in-c-2/). It uses void pointers and functions pointers to get the implementation of a generic linked list! **see the implementation to understand C generics better**
+  * can't perform pointer arithmetic on void pointers cuz no concrete value & size
+    * but there are are exceptions (mainly due to the compiler used). e.g. GNU's gcc allows pointer arithmetic on void pointers
+* [**NULL pointer**](https://www.geeksforgeeks.org/few-bytes-on-null-pointer-in-c/): points at nothing, i.e. if we don't have an adress to be assigned to a pointer, then assign it to NULL: `int *ptr = NULL;`
+  * NULL =/= uninitialized ptr(i.e. **wild pointer**): 
+    *  An uninitialized pointer stores an undefined value. A null pointer stores a defined value, but one that is defined by the environment to not be a valid address for any member or object.
+  *  NULL vs void ptrs:  Null pointer is a value, while void pointer is a type 
+  *  some common purposes of using NULL pointers: 
+    1. init a ptr variable without assigning any mem address to it yet
+    2. good practice to avoid bugs by checking for a NULL ptr before assgining any mem addr to it
+    3. to pass a NULL ptr to a fn argument when we don't want to pass any valid mem addr to it
+
+
+[How arrays' element accessing is done](https://www.geeksforgeeks.org/an-uncommon-representation-of-array-elements/):
+  * compiler converts the array operation in pointers before accessing the array elements.
+    * e.g. arr[0] would be *(arr + 0) and therefore 0[arr] would be *(0 + arr) and you know that both *(arr + 0) and *(0 + arr) are same
 ## Pointer Exp and Arithmetic
 
 Since Pointers hold addresses, we can do some arithmetic w them: 
@@ -457,10 +558,10 @@ Since Pointers hold addresses, we can do some arithmetic w them:
 > --- | --- | --- 
 > *(*nums) |  nums[0][0] | 	16
 > *(*nums + 1) | 	nums[0][1] | 	18
-> *(*nums + 2) | 	nums[0][2] | 	20
-> *(*(nums + 1)) | 	nums[1][0] | 	25
-> *(*(nums + 1) + 1) | 	nums[1][1] | 	26
-> *(*(nums + 1) + 2) | 	nums[1][2] | 	27
+> \*(*nums + 2) | 	nums[0][2] | 	20
+> \*(*(nums + 1)) | 	nums[1][0] | 	25
+> \*(*(nums + 1) + 1) | 	nums[1][1] | 	26
+> \*(*(nums + 1) + 2) | 	nums[1][2] | 	27
 
 
 ***nb: In general, `nums[i][j]` is equivalent to `*(*(nums+i)+j)`***
@@ -584,16 +685,69 @@ Well, just pointers to functions. There are some cool caveats to function pointe
 
 ```
 
+
+### Function pointer declarations
+
+Take note of operator precedence when declaring functions. The `()` operator takes precedence over the `*` operator, hence: 
+  * `int * foo(int);` --> a function foo that takes in an int and returns a pointer to an int (a function foo with one argument of int type and return value of int * i.e. integer pointer) 
+  So, we use the `()` operator to help **bind** the `*` to the function like so: `int (* foo) (int);`
+
 * [this is a really weird example of dereferencing and referencing](https://www.geeksforgeeks.org/dereference-reference-dereference-reference/) basically `*` and `&` cancel each other out. 
+
+### [Pointers and Arrays](https://www.geeksforgeeks.org/pointer-array-array-pointer/)
+
+
+#### [Pointers vs Arrays](https://www.geeksforgeeks.org/pointer-vs-array-in-c/)
+
+In general, we treat the use of pointers and array access as similar to each other, with the following differences: 
+  * `sizeof()` function returns different things
+  * `&` address operator returns different things 
+  * initializing a string literal will give different behaviours. 
+    * `char *ptr = "abc"`: will generally be read-only mem hence unchangeable string 
+    * `char array[] = "abc"`: individual char arr elements can be overwriten 
+  * pointers can be assigned a value while arrays cannot
+  * we can do pointer arithmetic but not array-related arithmetic
+[here's a more detailed description of the differences between pointers and arrays in C](https://www.geeksforgeeks.org/difference-pointer-array-c/)
+
+## [`restrict` keyword](https://www.geeksforgeeks.org/restrict-keyword-c/)
+
+This doesn't add functionality, simply allows for some optimisations to be done by the compiler. When we use restrict with a pointer ptr, it tells the compiler that ptr is the only way to access the object pointed by it and compiler doesn’t need to add any additional checks. If the code violates this condition, then the behaviour of that code is undefined
+
+  ```c
+
+  // C program to use restrict keyword. 
+  #include <stdio.h> 
+    
+  // Note that the purpose of restrict is to 
+  // show only syntax. It doesn't change anything 
+  // in output (or logic). It is just a way for 
+  // programmer to tell compiler about an  
+  // optimization 
+  void use(int* a, int* b, int* restrict c) 
+  { 
+      *a += *c; 
+    
+      // Since c is restrict, compiler will 
+      // not reload value at address c in 
+      // its assembly code. Therefore generated 
+      // assembly code is optimized 
+      *b += *c;   
+  } 
+    
+  int main(void) 
+  { 
+      int a = 50, b = 60, c = 70; 
+      use(&a, &b, &c); 
+      printf("%d %d %d", a, b, c); 
+      return 0; 
+  } 
+
+  ```
+
 
 
 # reading list
-https://www.geeksforgeeks.org/g-fact-19-redeclaration-of-global-variable-in-c/
-https://www.geeksforgeeks.org/internal-linkage-external-linkage-c/
-https://www.geeksforgeeks.org/different-ways-declare-variable-constant-c-c/
-https://www.geeksforgeeks.org/variable-name-not-start-numbers-c/
-https://www.geeksforgeeks.org/g-fact-19-redeclaration-of-global-variable-in-c/
-https://www.geeksforgeeks.org/initialization-global-static-variables-c/
+
 
 # questions to clarify
 
