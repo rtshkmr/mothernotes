@@ -14,6 +14,12 @@ this document serves to be my personal takeaways from CS2103T. Here's the [overa
     - [Polymorphism and Substitutability](#polymorphism-and-substitutability)
   - [1.4 Java Collections](#14-java-collections)
   - [1.5: Exception Handling](#15-exception-handling)
+- [Week 2: SDLC Processes, Version Control, IDE Basic Features & Automated Testing](#week-2-sdlc-processes-version-control-ide-basic-features--automated-testing)
+  - [2.2 SDLC: Software Development Life Cycle (SDLC)](#22-sdlc-software-development-life-cycle-sdlc)
+  - [2.3: RCS: Revision History](#23-rcs-revision-history)
+  - [2.4: Remote Repos](#24-remote-repos)
+  - [2.5: IDE Basic Features](#25-ide-basic-features)
+  - [2.6: Automated Testing](#26-automated-testing)
 
 # Week 1: OOP Concepts, Java Collections & Exceptions Handling
 
@@ -160,3 +166,106 @@ e.g. network connection timeout because of a slow server, or a corrupted file th
     * your catch block is your *exceptions handler*
 
 * **finally block**: You can use a `finally` block to specify code that is guaranteed to execute with or without the exception. This is the right place to close files, recover resources, and otherwise clean up after the code enclosed in the try block.
+
+
+
+# Week 2: SDLC Processes, Version Control, IDE Basic Features & Automated Testing
+
+## 2.2 SDLC: Software Development Life Cycle (SDLC)
+
+**SDLC:** stages include requirements, analysis, design, implementation and testing
+
+Some SDLC models: 
+* sequential/waterfall model: each step produces artifacts for the next
+  * useful model when the problem statement that is well-understood and stable
+  * major problem with this model is that requirements of a real-world project are rarely well-understood at the beginning and keep changing over time
+* iterative/incremental: feeback drives the incremental improvements
+  * **depth first iterative**
+  * **breadth first iterative**
+
+
+## 2.3: RCS: Revision History
+
+[overview video](https://www.youtube.com/watch?v=v40b3ExbM0c)
+
+**nb: they suggested using the win10 gui tool called source tree but let's use the cli instead**
+
+* init
+
+* staging and committing: 
+   Staging allows us to decide which changes to put in what commit. Helps us organise our commits better.
+
+   `stage` and `add` are synonymous
+
+   ***see commit graph:*** use `gitk`, a rudimentary gui tool, or `git log --all --decorate --oneline --graph` 
+
+* adding a .gitignore
+
+* going thru the history: 
+  * use the hash for the commit and checkout to that commit
+    * can checkout using commit hash or tagname
+      * can also `git chekout HEAD~2`: checks out to 2 commits behind HEAD
+    * [***stashing***](https://www.atlassian.com/git/tutorials/saving-changes/git-stash): checking out without stashing uncommited changes will cause overwriting of files when the checkouts happen. so stash the uncommitted changes first so you can unstash it later!
+      * stashes are locally stored, won't be pushed to remote location
+      * reapply previously stashed changes: 
+        * with `git stash pop`: pops it away from the stash
+        * `git stash apply`: will retain it in the stash and reapplies the changes 
+        * ***nb: git won't stash changes to untracked(unstaged)/ignored files***. can track changes to ignored files by using the `-a` option, so `git stash -a`. use `-u` for stashing untracked file changes
+        * can have multiple stashes, use the link above to understand how to use it better
+  * looking through changes: 
+    * check differences using `diff`
+      * no args: will show uncommitted changes since last commit
+      * `git diff <hashpoint1>..<hashpoint2>` will show changes between the two points passed
+      * `git diff <committed tag name>..HEAD`: from that tag to the most recent commit
+    * seeing an indiv commit: `git show <commit hash>`
+  * [tag](https://git-scm.com/book/en/v2/Git-Basics-Tagging) your commit!:
+    * `git tag -a <tag name>` : creates the tag, `a` flag is for annotation
+    * `git tag` : to view all tags
+    * `git push origin --tags` **remember to push your tags** 
+    * **nb:** tagging can be done on a previous commits, just pass in the hash for that commit after the annotation string
+
+## 2.4: Remote Repos
+
+Git is not the only VCS, others like Mercurial exist. GitHub isn't the only hosting service, BitBucket(supports Mercurial too) and GitLab exist too.
+
+**upstream repo:**
+  *  original repo that you clone from is the upstream repo
+     *  there can be multiple upstreams if they are cloned from each other
+     *  can work w any number of other repos as long as they have a shared history among them (i.e. one was copied from the other at some point)
+  *  cloning, pushing and pulling can be done b/w local repos too!
+  
+**forking**: involves creating a remote copy of another remote repo. Can be used to play around with code on repos for which you don't have write-access
+
+**pull request**: involves requesting someone else to pull your changes onto their repo, most commonly works when you send PRs from a fork to its upstream repo.
+
+**fetch vs pull**: 
+  * pull = fetch + merge, so will move the head to the latest commit
+
+
+## 2.5: IDE Basic Features
+
+Web based IDEs exist, e.g. Amazon's [Cloud9 IDE](https://aws.amazon.com/cloud9/)
+
+
+* [maiden run of intelliJ](https://www.youtube.com/watch?v=c0efB_CKOYo&feature=youtu.be)
+* [intelliJ intro](https://www.youtube.com/watch?v=S764o0mAXhg&feature=youtu.be), see other videos from that channel if needed for things like debugging and stuff 
+  
+
+## 2.6: Automated Testing
+
+Executing Test Cases: how to perform a test, at least the input to Software Under Test(SUT) and the expected behaviour. Elaborate test cases (w id, descrpition, objectives, classification info, cleanup instructions...)
+
+Each Test Case: 
+  1. feed input into SUT
+  2. observe actual o/p
+  3. compare actual vs expected o/p: a mismatch is a test case failure, indicates a bug *unless the test case is the error itself*
+
+
+**Regression**: modifying a system might cause unintended and undesirable changes in other areas. That's why we need to do regression testing where the past test cases also have to be run. This requires testing to be automated!
+
+^ **Test Driven Development (TDD)**
+
+**basic automated testing**:
+  * have an `input.txt` and a `expected.txt`
+  * run the program like so: `$ java AdressBook < input.txt > output.txt` to store the o/p in a file
+  * do a file comparison b/w the o/p and the expected o/p: `$ diff output.txt expected.txt`
