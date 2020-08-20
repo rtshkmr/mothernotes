@@ -20,6 +20,18 @@ this document serves to be my personal takeaways from CS2103T. Here's the [overa
   - [2.4: Remote Repos](#24-remote-repos)
   - [2.5: IDE Basic Features](#25-ide-basic-features)
   - [2.6: Automated Testing](#26-automated-testing)
+- [Week 3: Branching, FileIO, Code Organisation using Packaging](#week-3-branching-fileio-code-organisation-using-packaging)
+  - [3.1: RCS: Branching](#31-rcs-branching)
+  - [3.3: RCS: Creating Pull Requests](#33-rcs-creating-pull-requests)
+  - [3.3: Javadoc](#33-javadoc)
+  - [3.4: File IO in Java](#34-file-io-in-java)
+  - [3.5: Packages and Code Organisation](#35-packages-and-code-organisation)
+  - [3.6: JAR: archived java files](#36-jar-archived-java-files)
+  - [3.7 Good Quality Code & Coding Standards](#37-good-quality-code--coding-standards)
+  - [3.8: Developer Testing & Unit Testing](#38-developer-testing--unit-testing)
+    - [Test Automation Tools: JUnit](#test-automation-tools-junit)
+      - [Basic JUnit Testing](#basic-junit-testing)
+      - [Stubs and others](#stubs-and-others)
 
 # Week 1: OOP Concepts, Java Collections & Exceptions Handling
 
@@ -269,3 +281,173 @@ Each Test Case:
   * have an `input.txt` and a `expected.txt`
   * run the program like so: `$ java AdressBook < input.txt > output.txt` to store the o/p in a file
   * do a file comparison b/w the o/p and the expected o/p: `$ diff output.txt expected.txt`
+
+easy way to do the testing: run your code and see that it will fail after some new feature / change has been added. Just see the change by eye and see if it works. 
+
+
+# Week 3: Branching, FileIO, Code Organisation using Packaging 
+
+## 3.1: RCS: Branching
+
+Allows us to create isolated situations to safely create new features without affecting the master branch. 
+
+We can work on multiple branches at the same time as well and this helps us work on multiple features simultaneously without their effects affecting one another. 
+
+You can update a branch to the sync with the  merge commits done with the other branches to the master branch by merging the master branch to the branch you're working on. This might create a merge conflict. Now we can merge it back to the master branch when we're done with the current branch that we were working on.
+
+*rmb to switch* to 
+
+**merging**: results in a new commit to represent the commit (this allows a commit that indicates your deconflicting of merge conflicts), representing the changes done in the branch being merged. Git may realise that it can do a **fast-forward mege** by not creating that extra commit and this behaviour is defaulted to, in such cases we need to explicitly ask it to make a merge commit when merging. prevent fastforwarding like so: `git merge --no-ff <branch name>`
+
+
+nb: when merging,you should checkout to the receiving branch first then do the merging. applies for syncing master to yoru branch as well as merging your own branch to master as well... 
+
+
+**syncing branches**: e.g. while working on your branch, some urgent bug fix has been done by some other branch. Now we sync our current branch by:
+
+*  merging master to our branch. Just keep syncronising to the latest changes from master branch.
+*  doing a `rebase`. i.e. rebases the current branch you're working on and pretend like you're branching it off of the latest changes on the master branch. this is a little more advanced, use with caution. Rebasing will cause new hash commits, might mess up push changes and you'd have to do a force-push 
+
+
+## 3.3: RCS: Creating Pull Requests 
+
+While making the PR, we have to choose the correct destination and sources. If your repo has multiple upstreams, then the default ones may not be right, so take note. 
+  * less common to send PRs using `master` branch, more likely to be done from within a feature branch...
+**updating the PR** Note that while a PR review is in process, commiting to the branch that you submitted for PR will automatically update the code in the PR. 
+
+**creating PRs within the same repo**: that's possible, allows other devs to approve the chage via the PR review mechanism.
+
+[see github documentation on PRs](https://help.github.com/articles/creating-a-pull-request/)
+
+
+## 3.3: Javadoc
+
+just start using javadoc already. 
+
+[short tutorial on javadocs](https://www.tutorialspoint.com/java/java_documentation.htm)
+[detailed oracle document](https://www.oracle.com/technical-resources/articles/java/javadoc-tool.html)
+
+## 3.4: File IO in Java
+
+see `java.io.File`. within your java code, even on windows, your file path separator can be `/` as in unix. else can also use `\\` but rem to use 2 slashes.
+
+[file io techniques using other classes](https://www.tutorialspoint.com/java/java_files_io.htm)
+
+
+
+* **LOADING AND READING:**  create a `File` object and read lines in it using a `Scanner`, 
+* **WRITING FILE**: use `FileWriter` object, which has a `writeToFile` method... 
+example: 
+
+  ```java
+  import java.io.FileWriter;
+  import java.io.IOException;
+  import java.io.File;
+  import java.io.FileNotFoundException;
+  import java.util.Scanner;
+
+  public class FileReadingDemo {
+
+      private static void printFileContents(String filePath) throws FileNotFoundException {
+          File f = new File(filePath); // create a File for the given file path
+          Scanner s = new Scanner(f); // create a Scanner using the File as the source
+          while (s.hasNext()) {
+              System.out.println(s.nextLine());
+          }
+      }
+
+    private static void writeToFile(String filePath, String textToAdd) throws IOException {
+        FileWriter fw = new FileWriter(filePath); 
+        //^ open in append mode by passing in true as another argument
+        fw.write(textToAdd);
+        fw.close();
+    }
+
+      public static void main(String[] args) {
+          try {
+              printFileContents("data/fruits.txt");
+          } catch (FileNotFoundException e) {
+              System.out.println("File not found");
+          }
+
+        String file2 = "temp/lines.txt";
+          try {
+              writeToFile(file2, "first line" + System.lineSeparator() + "second line");
+          } catch (IOException e) {
+              System.out.println("Something went wrong: " + e.getMessage());
+          }
+        }
+
+  }
+
+  ```
+## 3.5: Packages and Code Organisation
+
+* package classes via a putting a **a single**  package statement at the top of the file. 
+  * lowercase (no camelCase) and separate folders via dot separators
+* importing packages won't import its subpackages, even if we use a wildcard (wildcard will import all the packages in that package but not subpackages). **packages don't behave as hierarchies**
+* *static imports* exist that allows us to import specific members of a type
+
+* running/compiling needs to take the packaging into account 
+
+^ a little unclear on this actually QQ
+
+
+
+## 3.6: JAR: archived java files 
+
+delivery method is usually JAR, contains classes and other resources/assets important to the program.
+
+[read this tut when needed](https://se-education.org/guides/tutorials/jar.html)
+
+## 3.7 Good Quality Code & Coding Standards
+
+Many topics under this are pretty subjective and opinionated. 
+
+Be open-minded about code-quality pls.
+
+Be a good follower. 
+
+Just follow the prescribed coding style. 
+
+rmb to config the IDE to be coding-standard compliant.
+
+## 3.8: Developer Testing & Unit Testing
+
+Ref to testing by Devs. Diff from QA engineers testing a system.
+
+Do early testing
+
+**Test Driver:**  drives the SUT for the purpose of testing. 
+
+### Test Automation Tools: JUnit
+
+Unit testing:  testing individual units (methods, classes, subsystems, ...) to ensure each piece works correctly
+
+
+[three pillars of unit tests](https://blog.aspiresys.pl/technology/three-pillars-of-unit-tests/)
+
+[some apple case study](https://avandeursen.com/2014/02/22/gotofail-security/)
+
+#### Basic JUnit Testing
+
+Create a matching Test Class using JUnit, with the methods you wanna try out.
+
+Naming convention for testcase methods: `whatIsBeingTested_descriptionOfTestInputs_expectedOutcome`
+
+[testing on exception handling](https://howtodoinjava.com/junit5/expected-exception-example/)
+
+
+[JUnit5 user guide](https://junit.org/junit5/docs/current/user-guide/)
+
+[testing private methods: short desc](http://stackoverflow.com/questions/34571/whats-the-proper-way-to-test-a-class-with-private-methods-using-junit) [testing private methods: longer desc](http://www.artima.com/suiterunner/private.html)
+
+
+#### Stubs and others 
+
+Stubs isolate an SUT from its dependencies. Allows testing to be done in isolation, so that dependencies are never the reason for the test to be influenced. 
+
+isolating meaning: ` If a Logic class depends on a Storage class, unit testing the Logic class requires isolating the Logic class from the Storage class.`
+
+Stubs mirror the Class it's a stub for, so that it's the same interface as the one you're making the stub for. Aim: so simple that it's unlikely to contain any bugs
+
