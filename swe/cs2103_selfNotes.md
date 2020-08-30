@@ -32,6 +32,13 @@ this document serves to be my personal takeaways from CS2103T. Here's the [overa
     - [Test Automation Tools: JUnit](#test-automation-tools-junit)
       - [Basic JUnit Testing](#basic-junit-testing)
       - [Stubs and others](#stubs-and-others)
+- [Week 4: Modelling, JavaFX, Varargs, Code Analysis and Review](#week-4-modelling-javafx-varargs-code-analysis-and-review)
+  - [4.2: Class/Object Diagams [UML Models]](#42-classobject-diagams-uml-models)
+    - [OO Structures and Class Structures](#oo-structures-and-class-structures)
+    - [Overview of Class/Object Diagrams:](#overview-of-classobject-diagrams)
+    - [Object vs Class Diagrams](#object-vs-class-diagrams)
+  - [4.3 Intermediate Features of UML Diagrams](#43-intermediate-features-of-uml-diagrams)
+  - [4.4: JavaFX: GUI programming](#44-javafx-gui-programming)
 
 # Week 1: OOP Concepts, Java Collections & Exceptions Handling
 
@@ -70,6 +77,9 @@ it allows us to abstract away the lower level details and work with bigger granu
     ```
 
 ### Instance and Class Methods/Members/GettersAndSetters/
+
+
+**nb:** member is just an umbrella term for anything in a class (but constructors are not members)
 
 Just diff scope. Not everything that has a "total" identifier means it has to be class-level, see if it's truly aggregated data.
 
@@ -450,4 +460,119 @@ Stubs isolate an SUT from its dependencies. Allows testing to be done in isolati
 isolating meaning: ` If a Logic class depends on a Storage class, unit testing the Logic class requires isolating the Logic class from the Storage class.`
 
 Stubs mirror the Class it's a stub for, so that it's the same interface as the one you're making the stub for. Aim: so simple that it's unlikely to contain any bugs
+
+
+
+# Week 4: Modelling, JavaFX, Varargs, Code Analysis and Review
+
+Modelling out software, the same application has many aspects (classes, structures, behaviours, interactions, various architectures...) and having a 
+standardised modelling scheme is useful for this.
+
+Also look at Model-driven development! 
+
+## 4.2: Class/Object Diagams [UML Models]
+
+[UML Modelling Language](https://en.wikipedia.org/wiki/Unified_Modeling_Language)
+
+Class Diagrams will have Object Diagrams
+
+### OO Structures and Class Structures 
+
+ a network of objects interacting with each other. Therefore, it is useful to be able to model how the relevant objects are 'networked' together inside a software
+
+ Class Structures determine how the objects are connected, the OO strutures can change over time 
+
+
+### Overview of Class/Object Diagrams:
+**Class Diagram:**
+  - UML class diagrams describe the structure (but not the behavior) of an OOP solution
+  - Underlining: 
+    - class level attributes and variables underlined
+    - underline the object model's title 
+  - Comparments: 
+    - **Attributes Compartment** and **Operations compartment** <--- may be omitted if doesn't value add
+    - all things in these compartments, keep it in the same compartment okay 
+    - can show empty compartments
+  - fields have data type indicated, for collections just describe as: `routes:Route[]`
+    - **either show it as an association to classes, or as an attribute, but not both, preferrable to use lines to show class association instead of putting it as an attribute of the containing class**
+  - field visibility: `+` for public and `-` for private
+
+
+  - **Associations** shown with a line joined to the two (implemented by using instance level attributes): 
+    - multiplicility relationship indicated on the line itself, use wildcard, single digit or range of digits to indicate this multiplicity
+    - **Association Decorations:**
+      - **Roles**: a specific type of association, e.g. longest_route
+      - **multiplicity** indication applies to roles also (if multiple routes of the same length, then there will be multiple `longest_route`)
+        - `0..1` is optional multiplicity 
+        - `1` multiplicity aka compulsary associations
+        - **bidirectional associations**: require matching variables in both classes 
+        - for other multiplicity associations, use the right Data Structures
+      - **Labels**:  tells us which direction to describe the associatio (which direction to read?) 
+      - **Navigability**: given a bunch of objects, which classes can navigate to others' (keeping reference off). can be bidirectional, unidirectional, can be transitive, **represented by arrowed lines (arrowhead on your association line)**
+        - note that classes linked by association doesn't automatically mean that they know about each other, navigability is a separate concept
+
+- class diagrams represent the relationships forever, a set of rules that exist forever 
+**Object Diagram:** An object diagram shows an object structure at a given point of time.
+  - `<objectname(optional)>:<Classname>`  <--- underlined, the name is optional 
+  - Object Structure associations will change in time, any of these time moments can be represented as a snapshot of sorts
+  - have no compartment for methods
+  - multiplicities also omitted 
+  - a single class diagram can have multiple object diagrams (cuz diff points in time)
+
+
+
+**nb:** can have association from one class to the same class: just get the multiplicity part right for the association, e.g. person with role of parents
+
+
+### Object vs Class Diagrams 
+
+## 4.3 Intermediate Features of UML Diagrams 
+
+**Inheritance**: `triangle arrowhead on the parent`
+
+**Composition**: `filled diamond on the larger one`whole part
+  * whole-part relationship
+  * implies no cyclical links 
+  *  keep track of it for data integrity. when the whole is deleted, the parts must be deleted too (books and chapters)
+  * cascading deletion alone isn't enough for something to be considered part of a whole, it needs to be an integral part 
+
+**Aggregation**: `empty diamond on the container`container-containee r/s, it's a little weaker. We are advised not to bring in aggregation 
+  * deleting container doesn't mean need to delete containee
+
+**Dependency**: a dependency is a need for one class to depend on another without having a direct association with it. represent with a `dashed dependency arrow`
+  - needs to be met for compilation to happen
+  - normal association has permanent link: holds reference but dependency, temporary dependency, uses it but doesn't keep references
+    - e.g. need to read data in a XX model to do some work every once in a while
+
+
+**Association classes:** Attaching behaviours into associations: use a separate class that represent the association. `single dashed line pointing to the association` 
+  * use it to store data about an association, e.g. `Man` an `Woman` having an association of Marriage, can consider having `Marriage` as a class.
+
+**Abstract Classes**: `{abstract}` keyword with braces 
+
+**Interfaces:** `<<interface>>`
+
+**Interface Implementations:** `dashed version of inheritance`
+
+**Constraints:** put within a note, put it `{within curly braces}` use [OC(Object Constraint Language)](https://en.wikipedia.org/wiki/Object_Constraint_Language)
+
+**Associations as Attributes:** `name: type [multiplicity] = default value`
+
+**Enumrations:** `<<enumeration>>` notation shall be used, treat it as a class of its own
+
+**Model notes**: freestanding or dashed line for attaching it to something 
+
+
+## 4.4: JavaFX: GUI programming
+
+
+
+
+
+
+
+
+
+
+
 
