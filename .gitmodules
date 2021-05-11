@@ -1,3 +1,15 @@
 [submodule "tech_tutorials/graphQLtest"]
 	path = tech_tutorials/graphQLtest
 	url = https://github.com/alyssanxt/graphQLtest.git
+[submodule "tech_tutorials/webdev_tutorials/coursera_backend"]
+	path = tech_tutorials/webdev_tutorials/coursera_backend
+	url = https://github.com/rtshkmr/coursera_backend.git
+[submodule "tech_tutorials/webdev_tutorials/coursera_bootstrap"]
+	path = tech_tutorials/webdev_tutorials/coursera_bootstrap
+	url = https://github.com/rtshkmr/coursera_bootstrap.git
+[submodule "tech_tutorials/webdev_tutorials/coursera_react"]
+	path = tech_tutorials/webdev_tutorials/coursera_react
+	url = https://github.com/rtshkmr/coursera_react.git
+[submodule "tech_tutorials/webdev_tutorials/coursera_react_native"]
+	path = tech_tutorials/webdev_tutorials/coursera_react_native
+	url = https://github.com/rtshkmr/coursera_react_native.git
