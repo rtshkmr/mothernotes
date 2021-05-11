@@ -1,0 +1,3 @@
+[submodule "tech_tutorials/graphQLtest"]
+	path = tech_tutorials/graphQLtest
+	url = https://github.com/alyssanxt/graphQLtest.git
