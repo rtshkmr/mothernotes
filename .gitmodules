@@ -13,3 +13,6 @@
 [submodule "tech_tutorials/webdev_tutorials/coursera_react_native"]
 	path = tech_tutorials/webdev_tutorials/coursera_react_native
 	url = https://github.com/rtshkmr/coursera_react_native.git
+[submodule "tech_tutorials/etl_camel_tutorial"]
+	path = tech_tutorials/etl_camel_tutorial
+	url = https://github.com/alyssanxt/etl_camel_tutorial.git
